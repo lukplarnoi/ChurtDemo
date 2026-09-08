@@ -1,270 +1,219 @@
+
 <!DOCTYPE html>
-<html lang="th" class="h-full bg-slate-950 text-slate-100 antialiased">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบริหารความเสี่ยงอัจฉริยะ - สหกรณ์ออมทรัพย์การตรวจเงินแผ่นดิน จำกัด</title>
+    <title>ระบบบริหารความเสี่ยงครบวงจร - สหกรณ์ออมทรัพย์การตรวจเงินแผ่นดิน จำกัด</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' },
-                        surface: { 800: '#1e293b', 900: '#0f172a', 950: '#020617' }
-                    },
-                    fontFamily: {
-                        sans: ['Sarabun', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- SheetJS CDN -->
+    <!-- SheetJS CDN for Excel Export/Import -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Font Sarabun -->
+    <!-- Google Fonts: Sarabun -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .glass-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .heat-cell {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .heat-cell:hover {
-            transform: scale(1.04);
-            z-index: 10;
-        }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        .risk-vh { background-color: #fee2e2; color: #991b1b; border-color: #f87171; }
+        .risk-h  { background-color: #ffedd5; color: #9a3412; border-color: #fb923c; }
+        .risk-m  { background-color: #fef9c3; color: #854d0e; border-color: #facc15; }
+        .risk-l  { background-color: #dcfce7; color: #166534; border-color: #4ade80; }
+        .badge-vh { background-color: #ef4444; color: white; }
+        .badge-h  { background-color: #f97316; color: white; }
+        .badge-m  { background-color: #eab308; color: white; }
+        .badge-l  { background-color: #22c55e; color: white; }
     </style>
 </head>
-<body class="h-full flex overflow-hidden font-sans select-none">
+<body class="text-slate-800 flex h-screen overflow-hidden">
 
     <!-- Sidebar Navigation -->
-    <aside class="w-72 bg-surface-900/90 border-r border-slate-800/80 flex flex-col justify-between shrink-0 z-30">
-        <div>
-            <!-- Brand Logo -->
-            <div class="h-20 flex items-center gap-3.5 px-6 border-b border-slate-800/80 bg-gradient-to-r from-blue-900/20 to-transparent">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 ring-1 ring-white/20">
-                    <i data-lucide="shield-check" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-sm tracking-wide text-white">สอ.สตง. จำกัด</h1>
-                    <p class="text-[11px] text-blue-400 font-medium">Enterprise Risk Portal</p>
-                </div>
+    <aside class="w-72 bg-slate-900 text-slate-200 flex flex-col shadow-xl z-20 shrink-0">
+        <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+            <div class="p-2 bg-blue-600 rounded-lg text-white">
+                <i data-lucide="shield-alert" class="w-6 h-6"></i>
             </div>
-
-            <!-- Navigation Links -->
-            <div class="p-4 space-y-1">
-                <div class="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">ขั้นตอนบริหารความเสี่ยง</div>
-                
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition bg-blue-600 text-white shadow-lg shadow-blue-600/20">
-                    <i data-lucide="layout-grid" class="w-4 h-4"></i> แดชบอร์ดภาพรวม & Risk Map
-                </button>
-                <button onclick="switchTab('register')" id="nav-register" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
-                    <i data-lucide="file-text" class="w-4 h-4"></i> ทะเบียนความเสี่ยง (41 ปัจจัย)
-                </button>
-                <button onclick="switchTab('treatment')" id="nav-treatment" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
-                    <i data-lucide="shield-alert" class="w-4 h-4"></i> แผนจัดการความเสี่ยง (แบบ 2)
-                </button>
-                <button onclick="switchTab('kri')" id="nav-kri" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
-                    <i data-lucide="activity" class="w-4 h-4"></i> ระบบเตือนภัย KRI Dashboard
-                </button>
-                <button onclick="switchTab('checklist')" id="nav-checklist" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
-                    <i data-lucide="check-circle-2" class="w-4 h-4"></i> ควบคุมภายใน & IT 5 มาตรการ
-                </button>
-                <button onclick="switchTab('survey')" id="nav-survey" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
-                    <i data-lucide="users" class="w-4 h-4"></i> ประเมินกรรมการ (13 ท่าน)
-                </button>
-                <button onclick="switchTab('incident')" id="nav-incident" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
-                    <i data-lucide="bell-ring" class="w-4 h-4"></i> รายงานความเสียหาย (Incident)
-                </button>
-
-                <div class="pt-4 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">ฐานข้อมูล</div>
-                <button onclick="switchTab('data-io')" id="nav-data-io" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition">
-                    <i data-lucide="database" class="w-4 h-4"></i> นำเข้า / ส่งออก (JSON & Excel)
-                </button>
+            <div>
+                <h1 class="font-bold text-base leading-tight text-white">สอ.สตง. จำกัด</h1>
+                <p class="text-xs text-slate-400">ระบบบริหารความเสี่ยง 6 ด้าน</p>
             </div>
         </div>
 
-        <!-- Financial Mini Summary -->
-        <div class="p-4 m-3 rounded-xl glass-panel border border-slate-700/40 text-[11px] space-y-2">
-            <div class="flex items-center justify-between text-slate-400 font-medium">
-                <span>ฐานะการเงิน 2568</span>
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            </div>
-            <div class="flex justify-between font-semibold">
-                <span class="text-slate-400">สินทรัพย์:</span>
-                <span class="text-white">2,654.04 ลบ.</span>
-            </div>
-            <div class="flex justify-between font-semibold">
-                <span class="text-slate-400">เงินรับฝาก:</span>
-                <span class="text-white">1,158.02 ลบ.</span>
-            </div>
-            <div class="flex justify-between font-semibold">
-                <span class="text-slate-400">NPL Ratio:</span>
-                <span class="text-emerald-400">0.20%</span>
-            </div>
+        <!-- 5 Steps & Menus -->
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1.5 text-sm">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">วงจรบริหารความเสี่ยง 5 ขั้นตอน</div>
+            
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition bg-blue-600 text-white">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard ภาพรวม & Risk Map
+            </button>
+            <button onclick="switchTab('register')" id="nav-register" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="clipboard-list" class="w-4 h-4"></i> ทะเบียนความเสี่ยง (41 ปัจจัย)
+            </button>
+            <button onclick="switchTab('treatment')" id="nav-treatment" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="shield-check" class="w-4 h-4"></i> แผนจัดการความเสี่ยง (แบบที่ 2)
+            </button>
+            <button onclick="switchTab('kri')" id="nav-kri" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="activity" class="w-4 h-4"></i> ระบบเตือนภัย KRI & สัญญาณไฟ
+            </button>
+            <button onclick="switchTab('checklist')" id="nav-checklist" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="check-square" class="w-4 h-4"></i> ควบคุมภายใน & IT 5 มาตรการ
+            </button>
+            <button onclick="switchTab('survey')" id="nav-survey" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="users" class="w-4 h-4"></i> แบบประเมินกรรมการ (13 คน)
+            </button>
+            <button onclick="switchTab('incident')" id="nav-incident" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i> รายงานเหตุเสียหาย (Incident)
+            </button>
+
+            <div class="pt-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">การจัดการข้อมูล</div>
+            <button onclick="switchTab('data-io')" id="nav-data-io" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="database" class="w-4 h-4"></i> นำเข้า / ส่งออก (JSON & Excel)
+            </button>
+        </nav>
+
+        <!-- Financial Summary Info -->
+        <div class="p-4 bg-slate-950 text-xs border-t border-slate-800 space-y-1">
+            <div class="font-semibold text-slate-300">ฐานะการเงิน สอ.สตง. (สิ้นปี 2568)</div>
+            <div class="flex justify-between text-slate-400"><span>สินทรัพย์รวม:</span><span class="text-slate-200">2,654.04 ลบ.</span></div>
+            <div class="flex justify-between text-slate-400"><span>เงินให้กู้ยืม:</span><span class="text-slate-200">1,203.41 ลบ.</span></div>
+            <div class="flex justify-between text-slate-400"><span>NPL Ratio:</span><span class="text-emerald-400 font-bold">0.20%</span></div>
         </div>
     </aside>
 
-    <!-- Main View Area -->
-    <div class="flex-1 flex flex-col h-full overflow-hidden bg-slate-950">
-        <!-- Top App Bar -->
-        <header class="h-20 bg-surface-900/40 border-b border-slate-800/60 px-8 flex items-center justify-between shrink-0 backdrop-blur-md">
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-slate-50">
+        
+        <!-- Header Bar -->
+        <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shrink-0 shadow-sm">
             <div>
-                <h2 id="page-title" class="text-lg font-bold text-white tracking-tight">แดชบอร์ดภาพรวม & Risk Matrix</h2>
-                <p id="page-desc" class="text-xs text-slate-400">ระบบประเมินความเสี่ยงตามเกณฑ์ กสส. และ ช.ส.อ. ปีงบประมาณ 2569</p>
+                <h2 id="page-title" class="text-xl font-bold text-slate-800">แดชบอร์ดภาพรวมและการประเมินความเสี่ยง</h2>
+                <p id="page-desc" class="text-xs text-slate-500">สหกรณ์ออมทรัพย์การตรวจเงินแผ่นดิน จำกัด ประจำปีงบการเงิน 2569</p>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="exportRiskToExcel()" class="flex items-center gap-2 bg-emerald-600/90 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition shadow-lg shadow-emerald-900/30 border border-emerald-500/30">
-                    <i data-lucide="download" class="w-4 h-4"></i> ส่งออก Excel
-                </button>
-                <button onclick="openModal('modal-add-risk')" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition shadow-lg shadow-blue-600/30 border border-blue-400/30">
-                    <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มปัจจัยเสี่ยง
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span> เกณฑ์ กสส. / ช.ส.อ.
+                </span>
+                <button onclick="openModal('modal-add-risk')" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> เพิ่มรายการความเสี่ยง
                 </button>
             </div>
         </header>
 
-        <!-- Scrollable Content Panels -->
+        <!-- Dynamic Body Content -->
         <div class="flex-1 overflow-y-auto p-8 space-y-8">
-            
-            <!-- SECTION 1: DASHBOARD -->
+
+            <!-- TAB 1: DASHBOARD -->
             <section id="tab-dashboard" class="space-y-8">
-                <!-- Summary Stats Cards -->
+                <!-- Summary KPI Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
-                        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition"></div>
-                        <div class="flex justify-between items-center text-slate-400 text-xs font-medium mb-2">
-                            <span>ความเสี่ยงทั้งหมด</span>
-                            <i data-lucide="layers" class="w-4 h-4 text-blue-400"></i>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold text-slate-500 uppercase">ความเสี่ยงทั้งหมด</span>
+                            <span class="p-2 bg-blue-50 text-blue-600 rounded-lg"><i data-lucide="layers" class="w-5 h-5"></i></span>
                         </div>
-                        <div class="text-3xl font-extrabold text-white" id="kpi-total-risk">41</div>
-                        <div class="text-[11px] text-slate-400 mt-1 font-light">ครอบคลุมทั้ง 6 ด้านสำคัญ</div>
+                        <div class="text-2xl font-bold text-slate-800 mt-2" id="kpi-total-risk">41 ปัจจัย</div>
+                        <div class="text-xs text-slate-500 mt-1">ครอบคลุม 6 ด้านสำคัญ</div>
                     </div>
-
-                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group border-rose-500/20">
-                        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition"></div>
-                        <div class="flex justify-between items-center text-rose-400 text-xs font-medium mb-2">
-                            <span>สูงมาก (VH: 16-25)</span>
-                            <i data-lucide="alert-octagon" class="w-4 h-4 text-rose-400"></i>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold text-rose-600 uppercase">ระดับสูงมาก (VH)</span>
+                            <span class="p-2 bg-rose-50 text-rose-600 rounded-lg"><i data-lucide="alert-octagon" class="w-5 h-5"></i></span>
                         </div>
-                        <div class="text-3xl font-extrabold text-rose-400" id="kpi-vh-risk">2</div>
-                        <div class="text-[11px] text-slate-400 mt-1 font-light">ต้องแก้ไขเร่งด่วนทันที</div>
+                        <div class="text-2xl font-bold text-rose-600 mt-2" id="kpi-vh-risk">2 รายการ</div>
+                        <div class="text-xs text-slate-500 mt-1">ต้องจัดการเร่งด่วนทันที</div>
                     </div>
-
-                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group border-orange-500/20">
-                        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-orange-500/10 rounded-full blur-xl group-hover:bg-orange-500/20 transition"></div>
-                        <div class="flex justify-between items-center text-orange-400 text-xs font-medium mb-2">
-                            <span>สูง (H: 10-15)</span>
-                            <i data-lucide="alert-triangle" class="w-4 h-4 text-orange-400"></i>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold text-orange-600 uppercase">ระดับสูง (H)</span>
+                            <span class="p-2 bg-orange-50 text-orange-600 rounded-lg"><i data-lucide="alert-triangle" class="w-5 h-5"></i></span>
                         </div>
-                        <div class="text-3xl font-extrabold text-orange-400" id="kpi-h-risk">21</div>
-                        <div class="text-[11px] text-slate-400 mt-1 font-light">มีแผนลดความเสี่ยงกำกับ</div>
+                        <div class="text-2xl font-bold text-orange-600 mt-2" id="kpi-h-risk">21 รายการ</div>
+                        <div class="text-xs text-slate-500 mt-1">มีแผนลดความเสี่ยงกำกับ</div>
                     </div>
-
-                    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group border-emerald-500/20">
-                        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition"></div>
-                        <div class="flex justify-between items-center text-emerald-400 text-xs font-medium mb-2">
-                            <span>ปานกลาง/ต่ำ (M/L)</span>
-                            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold text-emerald-600 uppercase">ระดับปานกลาง/ต่ำ (M/L)</span>
+                            <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><i data-lucide="check-circle" class="w-5 h-5"></i></span>
                         </div>
-                        <div class="text-3xl font-extrabold text-emerald-400" id="kpi-ml-risk">18</div>
-                        <div class="text-[11px] text-slate-400 mt-1 font-light">ควบคุมในระบบงานปกติ</div>
+                        <div class="text-2xl font-bold text-emerald-600 mt-2" id="kpi-ml-risk">18 รายการ</div>
+                        <div class="text-xs text-slate-500 mt-1">ควบคุมในระบบงานปกติ</div>
                     </div>
                 </div>
 
-                <!-- Matrix & Charts Grid -->
+                <!-- Charts & Risk Map Matrix -->
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <!-- 5x5 Matrix (7 Cols) -->
-                    <div class="lg:col-span-7 glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <!-- 5x5 Heatmap Matrix (7 Cols) -->
+                    <div class="lg:col-span-7 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div>
-                            <div class="flex items-center justify-between mb-4">
+                            <div class="flex justify-between items-center mb-4">
                                 <div>
-                                    <h3 class="text-sm font-bold text-white tracking-wide">ผังเมทริกซ์ความเสี่ยง 5x5 (Risk Heat Map)</h3>
-                                    <p class="text-xs text-slate-400">โอกาสเกิด (L) × ผลกระทบ (I)</p>
+                                    <h3 class="font-bold text-base text-slate-800">ผังเมทริกซ์ความเสี่ยง 5x5 (Risk Heat Map)</h3>
+                                    <p class="text-xs text-slate-500">โอกาสเกิด (ความถี่) × ผลกระทบ (ความเสียหาย)</p>
                                 </div>
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">เกณฑ์มาตรฐาน กสส.</span>
+                                <span class="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded">เกณฑ์มาตรฐาน กสส.</span>
                             </div>
 
-                            <!-- Heatmap Matrix Table -->
+                            <!-- Heatmap Table Grid -->
                             <div class="overflow-x-auto">
-                                <table class="w-full border-separate border-spacing-1.5 text-center text-xs">
+                                <table class="w-full border-collapse text-xs text-center font-medium">
                                     <thead>
                                         <tr>
-                                            <th class="p-1.5 text-left text-[11px] font-medium text-slate-500 w-24">I \ L</th>
-                                            <th class="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 font-medium">1</th>
-                                            <th class="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 font-medium">2</th>
-                                            <th class="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 font-medium">3</th>
-                                            <th class="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 font-medium">4</th>
-                                            <th class="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 font-medium">5</th>
+                                            <th class="p-1 text-left text-[11px] text-slate-400 w-24">ผลกระทบ \ โอกาส</th>
+                                            <th class="p-2 bg-slate-100 border border-slate-200 text-slate-700">1 (5 ปี/ครั้ง)</th>
+                                            <th class="p-2 bg-slate-100 border border-slate-200 text-slate-700">2 (2-4 ปี/ครั้ง)</th>
+                                            <th class="p-2 bg-slate-100 border border-slate-200 text-slate-700">3 (1 ปี/ครั้ง)</th>
+                                            <th class="p-2 bg-slate-100 border border-slate-200 text-slate-700">4 (1-6 ด./ครั้ง)</th>
+                                            <th class="p-2 bg-slate-100 border border-slate-200 text-slate-700">5 (>= 1 ด./ครั้ง)</th>
                                         </tr>
                                     </thead>
                                     <tbody id="risk-matrix-body">
-                                        <!-- Javascript Populates Cells -->
+                                        <!-- Rendered via JS -->
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-
-                        <!-- Heatmap Legend -->
-                        <div class="flex items-center justify-between text-[11px] text-slate-400 pt-4 mt-4 border-t border-slate-800/80">
-                            <div class="flex items-center gap-4">
-                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> สูงมาก (16-25)</span>
-                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-orange-500"></span> สูง (10-15)</span>
-                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> ปานกลาง (5-9)</span>
-                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> ต่ำ (1-4)</span>
+                        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-4 border-t border-slate-100 mt-4">
+                            <div class="flex items-center gap-3">
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded badge-vh"></span> สูงมาก (16-25)</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded badge-h"></span> สูง (10-15)</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded badge-m"></span> ปานกลาง (5-9)</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded badge-l"></span> ต่ำ (1-4)</span>
                             </div>
-                            <span class="text-slate-500">คลิกที่ช่องเพื่อดูรายการ</span>
+                            <span>คลิกที่ช่องเพื่อดูรายการความเสี่ยง</span>
                         </div>
                     </div>
 
-                    <!-- Doughnut Breakdown Chart (5 Cols) -->
-                    <div class="lg:col-span-5 glass-card p-6 rounded-2xl flex flex-col justify-between">
+                    <!-- Category Breakdown Chart (5 Cols) -->
+                    <div class="lg:col-span-5 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div>
-                            <h3 class="text-sm font-bold text-white tracking-wide">สัดส่วนความเสี่ยงรายด้าน</h3>
-                            <p class="text-xs text-slate-400 mb-4">การกระจายตัวของปัจจัยเสี่ยง 41 รายการ</p>
+                            <h3 class="font-bold text-base text-slate-800 mb-1">สัดส่วนความเสี่ยงรายด้าน (6 ด้าน)</h3>
+                            <p class="text-xs text-slate-500 mb-4">การกระจายตัวของปัจจัยเสี่ยง 41 รายการ</p>
                             <div class="h-64 flex items-center justify-center">
                                 <canvas id="chartCategory"></canvas>
                             </div>
                         </div>
-                        <div class="text-[11px] text-slate-400 text-center pt-3 border-t border-slate-800/80">
-                            เน้นการควบคุมด้านปฏิบัติการ เทคโนโลยีสารสนเทศ และสินเชื่อ
+                        <div class="text-xs text-slate-500 text-center pt-3 border-t border-slate-100">
+                            เน้นการบริหารจัดการด้านปฏิบัติการและสินเชื่อเป็นหลัก
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 2: RISK REGISTER -->
+            <!-- TAB 2: RISK REGISTER -->
             <section id="tab-register" class="space-y-6 hidden">
-                <div class="glass-card p-6 rounded-2xl space-y-4">
-                    <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
-                        <div class="flex items-center gap-3 w-full md:w-auto flex-1 max-w-xl">
-                            <div class="relative w-full">
-                                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
-                                <input type="text" id="search-risk" oninput="renderRiskTable()" placeholder="ค้นหาชื่อความเสี่ยง สาเหตุ หรือฝ่ายงาน..." class="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-700/80 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="relative flex-1 max-w-md">
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                                <input type="text" id="search-risk" oninput="renderRiskTable()" placeholder="ค้นหาชื่อความเสี่ยง, สาเหตุ, หรือด้านงาน..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             </div>
-                            <select id="filter-category" onchange="renderRiskTable()" class="bg-slate-900/80 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">ทุกด้านความเสี่ยง</option>
+                            <select id="filter-category" onchange="renderRiskTable()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">ทุกด้านความเสี่ยง (6 ด้าน)</option>
                                 <option value="ด้านกลยุทธ์">ด้านกลยุทธ์</option>
                                 <option value="ด้านสินเชื่อ">ด้านสินเชื่อ</option>
                                 <option value="ด้านการฝากและการลงทุน">ด้านการฝากและการลงทุน</option>
@@ -272,219 +221,284 @@
                                 <option value="ด้านปฏิบัติการ">ด้านปฏิบัติการ</option>
                                 <option value="ด้านการกำกับดูแล">ด้านการกำกับดูแล</option>
                             </select>
+                            <select id="filter-level" onchange="renderRiskTable()" class="border border-slate-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">ทุกระดับความเสี่ยง</option>
+                                <option value="สูงมาก">สูงมาก (VH)</option>
+                                <option value="สูง">สูง (H)</option>
+                                <option value="ปานกลาง">ปานกลาง (M)</option>
+                                <option value="ต่ำ">ต่ำ (L)</option>
+                            </select>
                         </div>
+                        <button onclick="exportRiskToExcel()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-medium transition shadow-sm">
+                            <i data-lucide="download" class="w-4 h-4"></i> ส่งออก Excel (XLSX)
+                        </button>
                     </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-800/80">
-                        <table class="w-full text-left text-xs border-collapse">
+                    <!-- Risk Register Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse text-left text-xs">
                             <thead>
-                                <tr class="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider font-semibold border-b border-slate-800">
-                                    <th class="p-3.5 text-center w-12">#</th>
-                                    <th class="p-3.5 w-32">ด้านความเสี่ยง</th>
-                                    <th class="p-3.5">เหตุการณ์ความเสี่ยง & สาเหตุ</th>
-                                    <th class="p-3.5 w-44">การควบคุมที่มีอยู่</th>
-                                    <th class="p-3.5 text-center w-14">L</th>
-                                    <th class="p-3.5 text-center w-14">I</th>
-                                    <th class="p-3.5 text-center w-16">คะแนน</th>
-                                    <th class="p-3.5 text-center w-24">ระดับ</th>
-                                    <th class="p-3.5 text-center w-20">จัดการ</th>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase font-semibold">
+                                    <th class="p-3 w-12 text-center">ลำดับ</th>
+                                    <th class="p-3 w-32">ด้านความเสี่ยง</th>
+                                    <th class="p-3">เหตุการณ์ความเสี่ยง & สาเหตุ</th>
+                                    <th class="p-3 w-40">การควบคุมที่มีอยู่</th>
+                                    <th class="p-3 w-16 text-center">โอกาส (L)</th>
+                                    <th class="p-3 w-16 text-center">ผลกระทบ (I)</th>
+                                    <th class="p-3 w-20 text-center">คะแนน</th>
+                                    <th class="p-3 w-24 text-center">ระดับ</th>
+                                    <th class="p-3 w-20 text-center">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="risk-table-body" class="divide-y divide-slate-800/60 bg-surface-900/30">
-                                <!-- Populated by JS -->
+                            <tbody id="risk-table-body" class="divide-y divide-slate-200">
+                                <!-- Rendered via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 3: TREATMENT PLAN -->
+            <!-- TAB 3: TREATMENT PLAN (FORM 2) -->
             <section id="tab-treatment" class="space-y-6 hidden">
-                <div class="glass-card p-6 rounded-2xl space-y-4">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h3 class="text-sm font-bold text-white tracking-wide">แผนจัดการความเสี่ยง (แบบที่ 2)</h3>
-                            <p class="text-xs text-slate-400">เน้นกิจกรรมควบคุมที่ไม่ใช้งบประมาณ และเตรียมระบบสำรองด้วยมือ (Manual Backup)</p>
+                            <h3 class="font-bold text-base text-slate-800">แผนจัดการความเสี่ยง (แบบที่ 2)</h3>
+                            <p class="text-xs text-slate-500">เน้นกิจกรรมควบคุมที่ไม่ใช้งบประมาณ และเตรียมระบบสำรองด้วยมือ (Manual Backup)</p>
                         </div>
+                        <button onclick="exportTreatmentToExcel()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-medium transition shadow-sm">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> ส่งออกแผนจัดการ (Excel)
+                        </button>
                     </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-800/80">
-                        <table class="w-full text-left text-xs border-collapse">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse text-left text-xs">
                             <thead>
-                                <tr class="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider font-semibold border-b border-slate-800">
-                                    <th class="p-3.5">ความเสี่ยง & ระดับ</th>
-                                    <th class="p-3.5 w-28">แนวทางตอบสนอง</th>
-                                    <th class="p-3.5">กิจกรรมควบคุมหลัก</th>
-                                    <th class="p-3.5 w-36">ผู้รับผิดชอบ</th>
-                                    <th class="p-3.5 w-24">งบประมาณ</th>
-                                    <th class="p-3.5 w-48">หลักฐานที่ต้องเก็บ</th>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase font-semibold">
+                                    <th class="p-3">ความเสี่ยง & ระดับ</th>
+                                    <th class="p-3 w-28">แนวทางตอบสนอง</th>
+                                    <th class="p-3">กิจกรรมควบคุมหลัก (ลดโอกาส/ผลกระทบ/ตรวจจับ)</th>
+                                    <th class="p-3 w-36">ผู้รับผิดชอบ (ตำแหน่ง)</th>
+                                    <th class="p-3 w-28">งบประมาณ</th>
+                                    <th class="p-3 w-44">หลักฐานที่ต้องจัดเก็บ</th>
                                 </tr>
                             </thead>
-                            <tbody id="treatment-table-body" class="divide-y divide-slate-800/60 bg-surface-900/30">
-                                <!-- Populated by JS -->
+                            <tbody id="treatment-table-body" class="divide-y divide-slate-200">
+                                <!-- Rendered via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 4: KRI EARLY WARNING -->
+            <!-- TAB 4: KRI & EARLY WARNING -->
             <section id="tab-kri" class="space-y-6 hidden">
-                <div class="glass-card p-6 rounded-2xl space-y-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h3 class="text-sm font-bold text-white tracking-wide">ระบบเตือนภัยล่วงหน้า (Early Warning KRI Dashboard)</h3>
-                            <p class="text-xs text-slate-400">ติดตามตัวชี้วัดความเสี่ยงสำคัญด้วยระบบสัญญาณไฟ เขียว-เหลือง-แดง</p>
+                            <h3 class="font-bold text-base text-slate-800">ระบบเตือนภัยล่วงหน้า (Early Warning KRI Dashboard)</h3>
+                            <p class="text-xs text-slate-500">ติดตามตัวชี้วัดความเสี่ยงสำคัญด้วยระบบสัญญาณไฟ เขียว-เหลือง-แดง</p>
                         </div>
+                        <span class="text-xs text-slate-400">อัปเดตข้อมูล: สิ้นงวดบัญชี 2568</span>
                     </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="kri-cards-container">
-                        <!-- Populated by JS -->
+                        <!-- Rendered via JS -->
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 5: CHECKLIST & IT 5 MEASURES -->
+            <!-- TAB 5: INTERNAL CONTROL & IT 5 MEASURES -->
             <section id="tab-checklist" class="space-y-6 hidden">
-                <div class="glass-card p-6 rounded-2xl space-y-4">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
                     <div>
-                        <h3 class="text-sm font-bold text-white tracking-wide">แนวทางการควบคุมภายใน และไอที 5 มาตรการ (สตส. 2553)</h3>
-                        <p class="text-xs text-slate-400">เกณฑ์การควบคุมตามมาตรฐานกรมตรวจบัญชีสหกรณ์ สำหรับระบบคอมพิวเตอร์</p>
+                        <h3 class="font-bold text-base text-slate-800">แนวทางการควบคุมภายใน และเกณฑ์ไอที 5 มาตรการ (สตส. 2553)</h3>
+                        <p class="text-xs text-slate-500">เกณฑ์การควบคุมตามมาตรฐานกรมตรวจบัญชีสหกรณ์ สำหรับระบบงานคอมพิวเตอร์</p>
                     </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-800/80">
-                        <table class="w-full text-left text-xs border-collapse">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse text-left text-xs">
                             <thead>
-                                <tr class="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider font-semibold border-b border-slate-800">
-                                    <th class="p-3.5 w-48">ด้านความเสี่ยง / มาตรการ</th>
-                                    <th class="p-3.5">ประเด็นปัญหาที่อาจเกิด</th>
-                                    <th class="p-3.5">จุดที่ต้องเข้าควบคุมตรวจสอบ</th>
-                                    <th class="p-3.5 text-center w-28">สถานะการตรวจ</th>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase font-semibold">
+                                    <th class="p-3 w-48">ด้านความเสี่ยง / มาตรการ</th>
+                                    <th class="p-3">ประเด็นปัญหาที่อาจเกิด (Risk Identification)</th>
+                                    <th class="p-3">จุดที่ต้องเข้าควบคุมตรวจสอบ (Internal Control Checklist)</th>
+                                    <th class="p-3 w-28 text-center">สถานะการตรวจ</th>
                                 </tr>
                             </thead>
-                            <tbody id="checklist-table-body" class="divide-y divide-slate-800/60 bg-surface-900/30">
-                                <!-- Populated by JS -->
+                            <tbody id="checklist-table-body" class="divide-y divide-slate-200">
+                                <!-- Rendered via JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 6: SURVEY FORM -->
+            <!-- TAB 6: BOARD SURVEY (13 DIRECTORS) -->
             <section id="tab-survey" class="space-y-6 hidden">
-                <div class="glass-card p-6 rounded-2xl space-y-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
                     <div class="flex justify-between items-center">
                         <div>
-                            <h3 class="text-sm font-bold text-white tracking-wide">แบบสอบถามประเมินความเสี่ยง (คณะกรรมการ 13 ท่าน)</h3>
-                            <p class="text-xs text-slate-400">เครื่องมือสำรวจความคิดเห็นของคณะกรรมการดำเนินการและฝ่ายจัดการ</p>
+                            <h3 class="font-bold text-base text-slate-800">แบบสอบถามประเมินความเสี่ยงด้านการเงิน (คณะกรรมการดำเนินการ 13 ท่าน)</h3>
+                            <p class="text-xs text-slate-500">เครื่องมือสำรวจความคิดเห็นของคณะกรรมการ (อายุเฉลี่ย 45 ปี) และฝ่ายจัดการ</p>
                         </div>
-                        <button onclick="submitSurvey()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition">บันทึกผลการประเมิน</button>
+                        <button onclick="submitSurvey()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition shadow-sm">
+                            บันทึกผลการประเมิน
+                        </button>
                     </div>
 
-                    <div class="space-y-4" id="survey-questions-container">
-                        <!-- Populated by JS -->
-                    </div>
+                    <form id="survey-form" class="space-y-4">
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-lg grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อผู้ประเมิน / กรรมการลำดับที่:</label>
+                                <input type="text" id="survey-evaluator" class="w-full p-2 border border-slate-300 rounded text-xs bg-white" placeholder="เช่น กรรมการท่านที่ 1 หรือ ผู้จัดการ">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">ตำแหน่ง:</label>
+                                <select id="survey-role" class="w-full p-2 border border-slate-300 rounded text-xs bg-white">
+                                    <option value="กรรมการดำเนินการ">กรรมการดำเนินการ (1 ใน 13 ท่าน)</option>
+                                    <option value="คณะอนุกรรมการบริหารความเสี่ยง">คณะอนุกรรมการบริหารความเสี่ยง</option>
+                                    <option value="ผู้จัดการ/ฝ่ายจัดการ">ผู้จัดการ/ฝ่ายจัดการ</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3" id="survey-questions-container">
+                            <!-- Rendered via JS -->
+                        </div>
+                    </form>
                 </div>
             </section>
 
-            <!-- SECTION 7: INCIDENT MANAGEMENT -->
+            <!-- TAB 7: INCIDENT REPORTING -->
             <section id="tab-incident" class="space-y-6 hidden">
-                <div class="glass-card p-6 rounded-2xl space-y-6">
-                    <div>
-                        <h3 class="text-sm font-bold text-white tracking-wide">ระบบรายงานเหตุการณ์ความเสียหาย (Incident Reporting)</h3>
-                        <p class="text-xs text-slate-400">บันทึกเหตุการณ์ความเสียหาย 4 ระดับความรุนแรง พร้อมกรอบเวลาแจ้งเตือน</p>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-800">แบบรายงานเหตุการณ์ความเสียหาย (Incident Reporting Form)</h3>
+                            <p class="text-xs text-slate-500">บันทึกเหตุการณ์ความเสียหาย 4 ระดับความรุนแรง พร้อมกรอบเวลาแจ้งเตือน</p>
+                        </div>
+                        <button onclick="saveIncident()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition shadow-sm">
+                            บันทึกรายงานเหตุการณ์
+                        </button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-slate-400 mb-1">ระดับความรุนแรง:</label>
-                            <select id="inc-level" class="w-full p-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-slate-200 focus:outline-none">
-                                <option value="ระดับ 4: วิกฤต">ระดับ 4: วิกฤต (เสียหาย > 1 ลบ. / ล่ม > 4 ชม. / PDPA > 100 ราย)</option>
-                                <option value="ระดับ 3: สูง">ระดับ 3: สูง (เสียหาย 2 แสน - 1 ลบ. / ล่ม 1-4 ชม.)</option>
-                                <option value="ระดับ 2: ปานกลาง">ระดับ 2: ปานกลาง (เสียหาย 2 หมื่น - 2 แสน / ล่ม < 1 ชม.)</option>
-                                <option value="ระดับ 1: ต่ำ">ระดับ 1: ต่ำ (เสียหาย <= 20,000 บาท)</option>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">ระดับความรุนแรงของเหตุการณ์:</label>
+                            <select id="inc-level" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs bg-white">
+                                <option value="ระดับ 4: วิกฤต">ระดับ 4: วิกฤต (เสียหาย > 1 ลบ. / ล่ม > 4 ชม. / PDPA > 100 ราย) - แจ้งใน 1-2 ชม.</option>
+                                <option value="ระดับ 3: สูง">ระดับ 3: สูง (เสียหาย 2 แสน - 1 ลบ. / ล่ม 1-4 ชม.) - แจ้งใน 4-6 ชม.</option>
+                                <option value="ระดับ 2: ปานกลาง">ระดับ 2: ปานกลาง (เสียหาย 2 หมื่น - 2 แสน / ล่ม < 1 ชม.) - แจ้งใน 24 ชม.</option>
+                                <option value="ระดับ 1: ต่ำ">ระดับ 1: ต่ำ (เสียหาย <= 20,000 บาท) - สรุปรายงานประจำเดือน</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">ฝ่ายงานที่เกิดเหตุ:</label>
-                            <input type="text" id="inc-dept" class="w-full p-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-slate-200" placeholder="เช่น ฝ่ายเทคโนโลยีสารสนเทศ">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">ฝ่ายงานที่เกิดเหตุ:</label>
+                            <input type="text" id="inc-dept" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs" placeholder="เช่น ฝ่ายการเงิน / ฝ่ายเทคโนโลยีสารสนเทศ">
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-slate-400 mb-1">รายละเอียดเหตุการณ์:</label>
-                            <textarea id="inc-desc" rows="3" class="w-full p-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-slate-200" placeholder="ระบุสิ่งที่เกิดขึ้น..."></textarea>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">รายละเอียดของเหตุการณ์:</label>
+                            <textarea id="inc-desc" rows="3" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs" placeholder="ระบุสิ่งที่เกิดขึ้น สาเหตุ และข้อเท็จจริง..."></textarea>
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">ความเสียหายโดยประมาณ (บาท):</label>
-                            <input type="number" id="inc-loss" class="w-full p-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-slate-200" placeholder="0">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">มูลค่าความเสียหายโดยประมาณ (บาท):</label>
+                            <input type="number" id="inc-loss" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs" placeholder="เช่น 50000">
                         </div>
                         <div>
-                            <label class="block text-slate-400 mb-1">มาตรการแก้ไขฉุกเฉิน:</label>
-                            <input type="text" id="inc-action" class="w-full p-2.5 bg-slate-900/80 border border-slate-700/80 rounded-xl text-slate-200" placeholder="เช่น สลับใช้ระบบสำรอง">
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">มาตรการแก้ไขฉุกเฉินเบื้องต้น:</label>
+                            <input type="text" id="inc-action" class="w-full p-2.5 border border-slate-300 rounded-lg text-xs" placeholder="เช่น ปิดกั้นพอร์ตเครือข่าย / สลับใช้ระบบบันทึกด้วยมือ">
                         </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button onclick="saveIncident()" class="bg-rose-600 hover:bg-rose-500 text-white px-5 py-2 rounded-xl text-xs font-semibold transition">บันทึกรายงาน</button>
                     </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-800/80 mt-4">
-                        <table class="w-full text-left text-xs border-collapse">
-                            <thead>
-                                <tr class="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider font-semibold border-b border-slate-800">
-                                    <th class="p-3">วัน-เวลา</th>
-                                    <th class="p-3">ระดับ</th>
-                                    <th class="p-3">ฝ่ายงาน</th>
-                                    <th class="p-3">รายละเอียด</th>
-                                    <th class="p-3">ความเสียหาย (บาท)</th>
-                                    <th class="p-3">มาตรการแก้ไข</th>
-                                </tr>
-                            </thead>
-                            <tbody id="incident-table-body" class="divide-y divide-slate-800/60 bg-surface-900/30">
-                                <!-- Populated by JS -->
-                            </tbody>
-                        </table>
+                    <!-- Incident Logs History -->
+                    <div class="pt-4 border-t border-slate-100">
+                        <h4 class="font-bold text-xs text-slate-700 uppercase mb-3">ประวัติการบันทึกเหตุการณ์ความเสียหาย</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse text-left text-xs">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                        <th class="p-2.5">วันที่-เวลา</th>
+                                        <th class="p-2.5">ระดับ</th>
+                                        <th class="p-2.5">ฝ่ายงาน</th>
+                                        <th class="p-2.5">รายละเอียด</th>
+                                        <th class="p-2.5">ความเสียหาย (บาท)</th>
+                                        <th class="p-2.5">มาตรการแก้ไข</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incident-table-body" class="divide-y divide-slate-200">
+                                    <!-- Rendered via JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- SECTION 8: DATA BACKUP / RESTORE -->
+            <!-- TAB 8: DATA IMPORT / EXPORT -->
             <section id="tab-data-io" class="space-y-6 hidden">
-                <div class="glass-card p-6 rounded-2xl space-y-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
                     <div>
-                        <h3 class="text-sm font-bold text-white tracking-wide">สำรองและกู้คืนฐานข้อมูล (JSON Backup)</h3>
-                        <p class="text-xs text-slate-400">จัดเก็บข้อมูลความเสี่ยงทั้งหมดไว้เป็นไฟล์สำรอง สามารถนำกลับมาใช้ได้ทุกเครื่อง</p>
+                        <h3 class="font-bold text-base text-slate-800">การนำเข้าและส่งออกฐานข้อมูลความเสี่ยง (Backup & Restore)</h3>
+                        <p class="text-xs text-slate-500">สามารถสำรองข้อมูลเก็บเป็นไฟล์ JSON หรือ Excel เพื่อนำกลับมาใช้งานบนเบราว์เซอร์เครื่องอื่นได้ 100%</p>
                     </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="p-6 rounded-xl border border-slate-800 bg-slate-900/50 space-y-4">
-                            <h4 class="font-bold text-xs text-white uppercase tracking-wider">ส่งออกข้อมูล (Export)</h4>
-                            <button onclick="exportFullJSON()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2">
-                                <i data-lucide="file-json" class="w-4 h-4"></i> ดาวน์โหลด JSON Backup
-                            </button>
+                        <!-- Export Card -->
+                        <div class="p-6 border border-slate-200 rounded-xl bg-slate-50 space-y-4">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-emerald-100 text-emerald-700 rounded-lg"><i data-lucide="download" class="w-5 h-5"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-slate-800">ส่งออกข้อมูล (Export)</h4>
+                                    <p class="text-xs text-slate-500">ดาวน์โหลดข้อมูลทั้งหมดของสหกรณ์</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <button onclick="exportFullJSON()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
+                                    <i data-lucide="file-json" class="w-4 h-4"></i> ส่งออกไฟล์สำรอง JSON (Full Backup)
+                                </button>
+                                <button onclick="exportRiskToExcel()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
+                                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> ส่งออกตารางทะเบียนความเสี่ยง (Excel)
+                                </button>
+                            </div>
                         </div>
-                        <div class="p-6 rounded-xl border border-slate-800 bg-slate-900/50 space-y-4">
-                            <h4 class="font-bold text-xs text-white uppercase tracking-wider">นำเข้าข้อมูล (Import)</h4>
-                            <input type="file" id="import-json-file" accept=".json" class="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 border border-slate-700/80 rounded-xl bg-slate-900 p-1">
-                            <button onclick="importJSONFile()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2">
-                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> กู้คืนข้อมูลจากไฟล์
-                            </button>
+
+                        <!-- Import Card -->
+                        <div class="p-6 border border-slate-200 rounded-xl bg-slate-50 space-y-4">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-blue-100 text-blue-700 rounded-lg"><i data-lucide="upload" class="w-5 h-5"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-slate-800">นำเข้าข้อมูล (Import)</h4>
+                                    <p class="text-xs text-slate-500">กู้คืนฐานข้อมูลจากไฟล์ JSON สำรอง</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <input type="file" id="import-json-file" accept=".json" class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg bg-white p-1">
+                                <button onclick="importJSONFile()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2">
+                                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> โหลดข้อมูลเข้าระบบ
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
         </div>
-    </div>
+    </main>
 
     <!-- Modal: Add / Edit Risk Item -->
-    <div id="modal-add-risk" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="glass-card rounded-2xl border border-slate-700/80 shadow-2xl max-w-xl w-full p-6 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-bold text-sm text-white" id="modal-risk-title">เพิ่มปัจจัยความเสี่ยง</h3>
-                <button onclick="closeModal('modal-add-risk')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div id="modal-add-risk" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 space-y-5 animate-in fade-in zoom-in duration-150 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-base text-slate-800" id="modal-risk-title">เพิ่มรายการประเมินความเสี่ยง</h3>
+                <button onclick="closeModal('modal-add-risk')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
+
             <input type="hidden" id="risk-edit-id" value="">
-            <div class="space-y-3 text-xs">
+            <div class="space-y-4 text-xs">
                 <div>
-                    <label class="block text-slate-400 mb-1">ด้านความเสี่ยง:</label>
-                    <select id="form-risk-cat" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-200 focus:outline-none">
+                    <label class="block font-semibold text-slate-700 mb-1">ด้านความเสี่ยง (6 ด้าน):</label>
+                    <select id="form-risk-cat" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white">
                         <option value="ด้านกลยุทธ์">ด้านกลยุทธ์ (Strategic Risk)</option>
                         <option value="ด้านสินเชื่อ">ด้านสินเชื่อ (Credit Risk)</option>
                         <option value="ด้านการฝากและการลงทุน">ด้านการฝากและการลงทุน (Investment Risk)</option>
@@ -494,21 +508,21 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">เหตุการณ์ความเสี่ยง:</label>
-                    <input type="text" id="form-risk-title" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-200" placeholder="เช่น ความล่าช้าในการพัฒนาระบบดิจิทัล">
+                    <label class="block font-semibold text-slate-700 mb-1">เหตุการณ์ความเสี่ยง (Risk Event):</label>
+                    <input type="text" id="form-risk-title" class="w-full p-2.5 border border-slate-300 rounded-lg" placeholder="เช่น ความล่าช้าในการพัฒนาระบบดิจิทัล">
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">สาเหตุความเสี่ยง:</label>
-                    <textarea id="form-risk-cause" rows="2" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-200" placeholder="เช่น กระบวนการจัดซื้อจัดจ้างซับซ้อน"></textarea>
+                    <label class="block font-semibold text-slate-700 mb-1">สาเหตุความเสี่ยง (Root Cause):</label>
+                    <textarea id="form-risk-cause" rows="2" class="w-full p-2.5 border border-slate-300 rounded-lg" placeholder="เช่น การจัดซื้อจัดจ้างภาครัฐมีความซับซ้อน"></textarea>
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">การควบคุมที่มีอยู่:</label>
-                    <textarea id="form-risk-control" rows="2" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-200" placeholder="เช่น คณะทำงานกำกับดิจิทัลติดตามทุกเดือน"></textarea>
+                    <label class="block font-semibold text-slate-700 mb-1">การควบคุมที่มีอยู่ (Existing Controls):</label>
+                    <textarea id="form-risk-control" rows="2" class="w-full p-2.5 border border-slate-300 rounded-lg" placeholder="เช่น คณะทำงานกำกับดิจิทัลติดตามทุกเดือน"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-slate-400 mb-1">โอกาสเกิด (L: 1-5):</label>
-                        <select id="form-risk-l" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-200">
+                        <label class="block font-semibold text-slate-700 mb-1">โอกาสเกิด (Likelihood 1-5):</label>
+                        <select id="form-risk-l" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white">
                             <option value="1">1 - น้อยมาก (5 ปี/ครั้ง)</option>
                             <option value="2">2 - น้อย (2-4 ปี/ครั้ง)</option>
                             <option value="3">3 - ปานกลาง (1 ปี/ครั้ง)</option>
@@ -517,9 +531,9 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-slate-400 mb-1">ผลกระทบ (I: 1-5):</label>
-                        <select id="form-risk-i" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-slate-200">
-                            <option value="1">1 - ต่ำมาก (<= 1 แสน)</option>
+                        <label class="block font-semibold text-slate-700 mb-1">ผลกระทบ (Impact 1-5):</label>
+                        <select id="form-risk-i" class="w-full p-2.5 border border-slate-300 rounded-lg bg-white">
+                            <option value="1">1 - ต่ำมาก (<= 1 แสน / ธุรการ)</option>
                             <option value="2">2 - ต่ำ (1 แสน - 1 ล้าน)</option>
                             <option value="3">3 - ปานกลาง (1 - 10 ล้าน)</option>
                             <option value="4">4 - สูง (10 - 100 ล้าน)</option>
@@ -528,29 +542,31 @@
                     </div>
                 </div>
             </div>
-            <div class="flex justify-end gap-3 pt-3 border-t border-slate-800">
-                <button onclick="closeModal('modal-add-risk')" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white">ยกเลิก</button>
-                <button onclick="saveRiskItem()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold">บันทึก</button>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button onclick="closeModal('modal-add-risk')" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50">ยกเลิก</button>
+                <button onclick="saveRiskItem()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm">บันทึกข้อมูล</button>
             </div>
         </div>
     </div>
 
-    <!-- Application Script -->
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
     <script>
+        // Data Store (Mockup data based on actual documents)
         const DEFAULT_RISKS = [
-            { id: 1, category: "ด้านกลยุทธ์", title: "ความล่าช้าในการพัฒนาระบบดิจิทัล", cause: "จัดซื้อจัดจ้างซับซ้อนและการเชื่อมต่อ Core Banking ล่าช้า", control: "มีคณะทำงานกำกับดูแลดิจิทัลติดตามรายไตรมาส", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. ติดตาม Milestone รายสัปดาห์ (ตรวจจับ)\n2. ประชุมตรวจรับงานทุก 15 วัน (ลดโอกาส)\n3. จัดทำแบบฟอร์มบันทึกด้วยมือคู่ขนาน (ลดผลกระทบ)", owner: "เจ้าหน้าที่เทคโนโลยีสารสนเทศ / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "ตาราง Milestone / บันทึกประชุมตรวจรับงาน" },
-            { id: 2, category: "ด้านปฏิบัติการ", title: "ความมั่นคงปลอดภัยไซเบอร์และ PDPA", cause: "ภัยคุกคามไซเบอร์ภายนอก และการตั้งค่าสิทธิ์เข้าถึงไม่รัดกุม", control: "ติดตั้ง Firewall และมีนโยบายรหัสผ่าน", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. จำกัดสิทธิ์ Least Privilege (ลดโอกาส)\n2. ตรวจสอบ Access Log รายสัปดาห์ (ตรวจจับ)\n3. ซักซ้อมแผนฉุกเฉินกู้คืนระบบรายไตรมาส (ลดผลกระทบ)", owner: "เจ้าหน้าที่ IT / DPO", budget: "ไม่ใช้งบประมาณ", evidence: "ทะเบียนสิทธิ์ผู้ใช้งาน / บันทึก Access Log" },
-            { id: 3, category: "ด้านสินเชื่อ", title: "การกระจุกตัวของพอร์ตสินเชื่อลูกหนี้รายใหญ่", cause: "สัดส่วนเงินกู้พิเศษเพื่อที่อยู่อาศัยมีมูลค่าสะสมสูง", control: "มีเพดานวงเงินกู้สูงสุดตามระเบียบ", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. สรุปรายงานลูกหนี้ 20 รายแรกเสนอทุกเดือน (ตรวจจับ)\n2. กำหนดเพดานวงเงินกู้ต่อราย (ลดโอกาส)\n3. สอบยันยอดหนี้คงเหลือรายบุคคล (ตรวจจับ)", owner: "เจ้าหน้าที่สินเชื่อ / คณะกรรมการเงินกู้", budget: "ไม่ใช้งบประมาณ", evidence: "รายงานลูกหนี้รายใหญ่ / ระเบียบเพดานเงินกู้" },
-            { id: 4, category: "ด้านการฝากและการลงทุน", title: "ความเสี่ยงคู่สัญญาและเงินลงทุนด้อยค่า", cause: "สหกรณ์ผู้กู้หรือสถาบันการเงินที่ลงทุนประสบปัญหา", control: "ลงทุนตามประกาศนายทะเบียนและตรวจ Credit Rating", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. ทบทวน Credit Rating คู่สัญญาทุกไตรมาส (ตรวจจับ)\n2. กำหนดเพดานเงินฝาก/ลงทุนต่อแห่ง (ลดโอกาส)\n3. บันทึกบัญชีคุมตราสารหนี้แยกรายสถาบัน (ลดผลกระทบ)", owner: "เจ้าหน้าที่การเงิน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "รายงาน Credit Rating / ทะเบียนคุมเอกสารสิทธิ์" },
-            { id: 5, category: "ด้านสภาพคล่อง", title: "ความไม่สอดคล้องของอายุสินทรัพย์และหนี้สิน (ALM Mismatch)", cause: "นำเงินรับฝากระยะสั้นไปปล่อยสินเชื่อระยะยาว", control: "ติดตามประมาณการกระแสเงินสดล่วงหน้า", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. จัดทำรายงาน GAP Analysis ทุกเดือน (ตรวจจับ)\n2. ปรับโครงสร้างระยะเวลาเงินฝากประจำ (ลดโอกาส)\n3. เตรียมความพร้อมวงเงินกู้เบิกเกินบัญชี O/D (ลดผลกระทบ)", owner: "เจ้าหน้าที่การเงิน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "รายงาน Maturity GAP / หนังสือยืนยันวงเงิน O/D" },
-            { id: 6, category: "ด้านการกำกับดูแล", title: "การไม่ปฏิบัติตามกฎหมาย ระเบียบ หรือ AML/CTPF", cause: "ระเบียบข้อบังคับเปลี่ยนแปลงบ่อย", control: "มีที่ปรึกษากฎหมายและติดตามประกาศทางการ", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. จัดทำ Compliance Checklist ทุกเดือน (ตรวจจับ)\n2. ตรวจสอบ Sanction List ก่อนทำธุรกรรม (ลดโอกาส)\n3. ส่งรายงานธุรกรรม ปปง. ตามกำหนด (ลดผลกระทบ)", owner: "เจ้าหน้าที่กำกับการปฏิบัติงาน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "แบบรายงาน Compliance Checklist / สำเนารายงาน ปปง." },
-            { id: 7, category: "ด้านการฝากและการลงทุน", title: "ความผันผวนของส่วนต่างดอกเบี้ย (NIM)", cause: "อัตราดอกเบี้ยนโยบายผันผวน ต้นทุนเงินฝากคงที่สูง", control: "คณะกรรมการมีอำนาจปรับโครงสร้างดอกเบี้ย", l: 3, i: 3, treatment: "ลดความเสี่ยง", action: "1. วิเคราะห์ NIM Sensitivity ทุก 6 เดือน (ตรวจจับ)\n2. ปรับอัตราดอกเบี้ยให้สอดรับตลาด (ลดผลกระทบ)\n3. บันทึกสถิติต้นทุนดอกเบี้ยรายเดือน (ตรวจจับ)", owner: "เจ้าหน้าที่การเงิน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "ตาราง NIM Sensitivity / มติคณะกรรมการเรื่องดอกเบี้ย" },
-            { id: 8, category: "ด้านกลยุทธ์", title: "การสื่อสารและถ่ายทอดแผนยุทธศาสตร์ไม่ทั่วถึง", cause: "ช่องทางสื่อสารจำกัด และบุคลากรมีภาระงานมาก", control: "ประชุมชี้แจงประจำปี", l: 3, i: 3, treatment: "ลดความเสี่ยง", action: "1. ประชุมถ่ายทอดตัวชี้วัดรายฝ่าย (ลดโอกาส)\n2. จัดทำคู่มือปฏิบัติงานฉบับย่อ (ลดโอกาส)\n3. ประเมินความเข้าใจด้วยแบบสอบถาม (ตรวจจับ)", owner: "เจ้าหน้าที่ธุรการ / ผู้จัดการ", budget: "ตามระเบียบ", evidence: "รายงานประชุมชี้แจง / แบบสอบถามรับรู้ยุทธศาสตร์" },
-            { id: 9, category: "ด้านกลยุทธ์", title: "ผลิตภัณฑ์และบริการไม่สอดคล้องความต้องการ", cause: "พฤติกรรมการเงินของสมาชิกเปลี่ยนไปสู่ระบบดิจิทัล", control: "สำรวจความคิดเห็นในการประชุมใหญ่", l: 2, i: 3, treatment: "รับความเสี่ยงเพื่อโอกาส", action: "1. สำรวจความต้องการในการประชุมใหญ่ (ตรวจจับ)\n2. ศึกษาวิจัยต้นทุนผลตอบแทน (ลดโอกาส)\n3. ทดลองให้บริการกลุ่มตัวอย่าง (ลดผลกระทบ)", owner: "เจ้าหน้าที่สินเชื่อ / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "แบบสำรวจสมาชิก / รายงานวิเคราะห์ความคุ้มค่า" },
-            { id: 10, category: "ด้านการกำกับดูแล", title: "ความขัดแย้งทางผลประโยชน์ (COI)", cause: "การทำธุรกรรมระหว่างสหกรณ์กับผู้มีส่วนได้เสีย", control: "ข้อบังคับกำหนดให้ผู้มีส่วนได้เสียออกจากห้องประชุม", l: 1, i: 5, treatment: "ลดความเสี่ยง", action: "1. ลงนามแบบแสดงตนไม่มีส่วนได้เสียประจำปี (ลดโอกาส)\n2. บันทึกการงดออกเสียงในรายงานประชุม (ตรวจจับ)\n3. คุมทะเบียนธุรกรรมบุคคลเกี่ยวโยง (ตรวจจับ)", owner: "เจ้าหน้าที่ธุรการ / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "แบบลงนาม COI / รายงานการประชุมคณะกรรมการ" },
-            { id: 11, category: "ด้านปฏิบัติการ", title: "ข้อผิดพลาดหรือการทุจริตในระบบรับจ่ายเงินสด", cause: "การไม่ปฏิบัติตามระเบียบควบคุมภายใน", control: "ระบบ Maker-Checker และผู้ตรวจสอบกิจการ", l: 1, i: 5, treatment: "ลดความเสี่ยง", action: "1. บังคับใช้ระบบ Maker-Checker ทุกยอดเงิน (ลดโอกาส)\n2. กระทบยอดเงินฝากธนาคารทุกสิ้นวัน (ตรวจจับ)\n3. กำหนดรอบสลับหมุนเวียนงาน (ลดโอกาส)", owner: "เจ้าหน้าที่การเงิน / สมุห์บัญชี / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "ใบสำคัญจ่ายลายมือชื่อ 2 ชั้น / งบกระทบยอดรายวัน" },
-            { id: 12, category: "ด้านสินเชื่อ", title: "การผิดนัดชำระหนี้ของลูกหนี้เงินกู้ (NPL)", cause: "สมาชิกมีภาระหนี้ภายนอกสูง หรือพ้นสภาพข้าราชการ", control: "หักเงินเดือน ณ ที่จ่าย มีหุ้นค้ำประกัน 1,226 ลบ.", l: 1, i: 3, treatment: "รับความเสี่ยงเพื่อโอกาส", action: "1. ตรวจเงินได้คงเหลือสุทธิ >= 30% (ลดโอกาส)\n2. กระทบยอดเงินหักส่งรายเดือน (ตรวจจับ)\n3. บังคับใช้หลักประกันหุ้นเมื่อค้าง > 60 วัน (ลดผลกระทบ)", owner: "เจ้าหน้าที่สินเชื่อ / คณะกรรมการเงินกู้", budget: "ไม่ใช้งบประมาณ", evidence: "รายงานคำนวณเงินได้สุทธิ / ทะเบียนคุมการหักเงินเดือน" },
-            { id: 13, category: "ด้านสภาพคล่อง", title: "การถอนเงินฝากจำนวนมากอย่างกะทันหัน", cause: "สมาชิกขาดความเชื่อมั่น หรือจำเป็นต้องใช้เงินพร้อมกัน", control: "ดำรงสินทรัพย์สภาพคล่องตามเกณฑ์ มีวงเงิน O/D", l: 1, i: 3, treatment: "ยอมรับความเสี่ยง", action: "1. ประมาณการกระแสเงินสดรับจ่าย 30 วัน (ตรวจจับ)\n2. ดำรงสินทรัพย์สภาพคล่องตามกฎหมาย (ลดผลกระทบ)\n3. ยืนยันความพร้อมวงเงินกู้ O/D (ลดผลกระทบ)", owner: "เจ้าหน้าที่การเงิน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "ตารางประมาณการเงินสด / รายงานดำรงสภาพคล่อง" }
+            { id: 1, category: "ด้านกลยุทธ์", title: "ความล่าช้าในการพัฒนาระบบเทคโนโลยีสารสนเทศและบริการดิจิทัล", cause: "กระบวนการจัดซื้อจัดจ้างซับซ้อนและการเชื่อมต่อ Core Banking ล่าช้า", control: "มีคณะทำงานกำกับดูแลดิจิทัลติดตามรายไตรมาส", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. ติดตาม Milestone รายสัปดาห์ (ตรวจจับ)\n2. ประชุมตรวจรับงานทุก 15 วัน (ลดโอกาส)\n3. จัดทำแบบฟอร์มบันทึกด้วยมือคู่ขนาน (ลดผลกระทบ)", owner: "เจ้าหน้าที่เทคโนโลยีสารสนเทศ / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "ตาราง Milestone รายสัปดาห์ / บันทึกประชุมตรวจรับงาน" },
+            { id: 2, category: "ด้านปฏิบัติการ", title: "ความมั่นคงปลอดภัยไซเบอร์และการรั่วไหลของข้อมูลสมาชิก (PDPA)", cause: "ภัยคุกคามไซเบอร์ภายนอก และการตั้งค่าสิทธิ์เข้าถึงไม่รัดกุม", control: "ติดตั้ง Firewall และมีนโยบายรหัสผ่าน", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. จำกัดสิทธิ์ Least Privilege (ลดโอกาส)\n2. ตรวจสอบ Access Log รายสัปดาห์ (ตรวจจับ)\n3. ซักซ้อมแผนฉุกเฉินกู้คืนระบบรายไตรมาส (ลดผลกระทบ)", owner: "เจ้าหน้าที่ IT / DPO", budget: "ไม่ใช้งบประมาณ", evidence: "ทะเบียนสิทธิ์ผู้ใช้งาน / บันทึก Access Log" },
+            { id: 3, category: "ด้านสินเชื่อ", title: "การกระจุกตัวของพอร์ตสินเชื่อในลูกหนี้รายใหญ่วงเงินสูง", cause: "สัดส่วนเงินกู้พิเศษเพื่อที่อยู่อาศัยของสมาชิกชั้นผู้ใหญ่มีมูลค่าสะสมสูง", control: "มีเพดานวงเงินกู้สูงสุดตามระเบียบ", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. สรุปรายงานลูกหนี้ 20 รายแรกเสนอทุกเดือน (ตรวจจับ)\n2. กำหนดเพดานวงเงินกู้ต่อราย (ลดโอกาส)\n3. สอบยันยอดหนี้คงเหลือรายบุคคล (ตรวจจับ)", owner: "เจ้าหน้าที่สินเชื่อ / คณะกรรมการเงินกู้", budget: "ไม่ใช้งบประมาณ", evidence: "รายงานลูกหนี้รายใหญ่ / ระเบียบเพดานเงินกู้" },
+            { id: 4, category: "ด้านการฝากและการลงทุน", title: "ความเสี่ยงคู่สัญญาและการด้อยค่าของเงินลงทุนในสถาบันอื่น", cause: "สหกรณ์ผู้กู้หรือสถาบันการเงินที่ลงทุนประสบปัญหาทางการเงิน", control: "ลงทุนตามประกาศนายทะเบียนและตรวจ Credit Rating", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. ทบทวน Credit Rating คู่สัญญาทุกไตรมาส (ตรวจจับ)\n2. กำหนดเพดานเงินฝาก/ลงทุนต่อแห่ง (ลดโอกาส)\n3. บันทึกบัญชีคุมตราสารหนี้แยกรายสถาบัน (ลดผลกระทบ)", owner: "เจ้าหน้าที่การเงิน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "รายงาน Credit Rating / ทะเบียนคุมเอกสารสิทธิ์" },
+            { id: 5, category: "ด้านสภาพคล่อง", title: "ความไม่สอดคล้องของโครงสร้างอายุสินทรัพย์และหนี้สิน (ALM Mismatch)", cause: "นำเงินรับฝากระยะสั้นไปปล่อยสินเชื่อระยะยาว", control: "ติดตามประมาณการกระแสเงินสดล่วงหน้า", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. จัดทำรายงาน GAP Analysis ทุกเดือน (ตรวจจับ)\n2. ปรับโครงสร้างระยะเวลาเงินฝากประจำ (ลดโอกาส)\n3. เตรียมความพร้อมวงเงินกู้เบิกเกินบัญชี O/D (ลดผลกระทบ)", owner: "เจ้าหน้าที่การเงิน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "รายงาน Maturity GAP / หนังสือยืนยันวงเงิน O/D" },
+            { id: 6, category: "ด้านการกำกับดูแล", title: "การไม่ปฏิบัติตามกฎหมาย ระเบียบนายทะเบียน หรือ AML/CTPF", cause: "ระเบียบข้อบังคับเปลี่ยนแปลงบ่อยและบุคลากรยังไม่ชำนาญ", control: "มีที่ปรึกษากฎหมายและติดตามประกาศทางการ", l: 2, i: 5, treatment: "ลดความเสี่ยง", action: "1. จัดทำ Compliance Checklist ทุกเดือน (ตรวจจับ)\n2. ตรวจสอบ Sanction List ก่อนทำธุรกรรม (ลดโอกาส)\n3. ส่งรายงานธุรกรรม ปปง. ตามกำหนด (ลดผลกระทบ)", owner: "เจ้าหน้าที่กำกับการปฏิบัติงาน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "แบบรายงาน Compliance Checklist / สำเนารายงาน ปปง." },
+            { id: 7, category: "ด้านการฝากและการลงทุน", title: "ความผันผวนของส่วนต่างรายได้ดอกเบี้ยสุทธิ (NIM)", cause: "อัตราดอกเบี้ยนโยบายผันผวน ขณะที่ต้นทุนเงินฝากคงที่สูง", control: "คณะกรรมการมีอำนาจปรับโครงสร้างดอกเบี้ย", l: 3, i: 3, treatment: "ลดความเสี่ยง", action: "1. วิเคราะห์ NIM Sensitivity ทุก 6 เดือน (ตรวจจับ)\n2. ปรับอัตราดอกเบี้ยให้สอดรับตลาด (ลดผลกระทบ)\n3. บันทึกสถิติต้นทุนดอกเบี้ยรายเดือน (ตรวจจับ)", owner: "เจ้าหน้าที่การเงิน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "ตาราง NIM Sensitivity / มติคณะกรรมการเรื่องดอกเบี้ย" },
+            { id: 8, category: "ด้านกลยุทธ์", title: "การสื่อสารและถ่ายทอดแผนยุทธศาสตร์ไม่ทั่วถึง", cause: "ช่องทางสื่อสารจำกัด และบุคลากรมีภาระงานประจำมาก", control: "ประชุมชี้แจงประจำปี", l: 3, i: 3, treatment: "ลดความเสี่ยง", action: "1. ประชุมถ่ายทอดตัวชี้วัดรายฝ่าย (ลดโอกาส)\n2. จัดทำคู่มือปฏิบัติงานฉบับย่อ (ลดโอกาส)\n3. ประเมินความเข้าใจด้วยแบบสอบถาม (ตรวจจับ)", owner: "เจ้าหน้าที่ธุรการ / ผู้จัดการ", budget: "ตามระเบียบ", evidence: "รายงานประชุมชี้แจง / แบบสอบถามรับรู้ยุทธศาสตร์" },
+            { id: 9, category: "ด้านกลยุทธ์", title: "ผลิตภัณฑ์และบริการไม่สอดคล้องความต้องการของสมาชิก", cause: "พฤติกรรมการเงินของสมาชิกเปลี่ยนไปสู่ระบบดิจิทัล", control: "สำรวจความคิดเห็นในการประชุมใหญ่", l: 2, i: 3, treatment: "รับความเสี่ยงเพื่อโอกาส", action: "1. สำรวจความต้องการในการประชุมใหญ่ (ตรวจจับ)\n2. ศึกษาวิจัยต้นทุนผลตอบแทน (ลดโอกาส)\n3. ทดลองให้บริการกลุ่มตัวอย่าง (ลดผลกระทบ)", owner: "เจ้าหน้าที่สินเชื่อ / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "แบบสำรวจสมาชิก / รายงานวิเคราะห์ความคุ้มค่า" },
+            { id: 10, category: "ด้านการกำกับดูแล", title: "ความขัดแย้งทางผลประโยชน์ (Conflict of Interest)", cause: "การทำธุรกรรมระหว่างสหกรณ์กับผู้มีส่วนได้เสีย", control: "ข้อบังคับกำหนดให้ผู้มีส่วนได้เสียออกจากห้องประชุม", l: 1, i: 5, treatment: "ลดความเสี่ยง", action: "1. ลงนามแบบแสดงตนไม่มีส่วนได้เสียประจำปี (ลดโอกาส)\n2. บันทึกการงดออกเสียงในรายงานประชุม (ตรวจจับ)\n3. คุมทะเบียนธุรกรรมบุคคลเกี่ยวโยง (ตรวจจับ)", owner: "เจ้าหน้าที่ธุรการ (เลขานุการ) / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "แบบลงนาม COI / รายงานการประชุมคณะกรรมการ" },
+            { id: 11, category: "ด้านปฏิบัติการ", title: "ข้อผิดพลาดหรือการทุจริตในระบบรับ-จ่ายเงินสดและบัญชี", cause: "การไม่ปฏิบัติตามระเบียบควบคุมภายใน", control: "ระบบ Maker-Checker และผู้ตรวจสอบกิจการ", l: 1, i: 5, treatment: "ลดความเสี่ยง", action: "1. บังคับใช้ระบบ Maker-Checker ทุกยอดเงิน (ลดโอกาส)\n2. กระทบยอดเงินฝากธนาคารทุกสิ้นวัน (ตรวจจับ)\n3. กำหนดรอบสลับหมุนเวียนงาน (ลดโอกาส)", owner: "เจ้าหน้าที่การเงิน / สมุห์บัญชี / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "ใบสำคัญจ่ายลายมือชื่อ 2 ชั้น / งบกระทบยอดรายวัน" },
+            { id: 12, category: "ด้านสินเชื่อ", title: "การผิดนัดชำระหนี้ของลูกหนี้เงินกู้สามัญและเงินกู้พิเศษ (NPL)", cause: "สมาชิกมีภาระหนี้ภายนอกสูง หรือพ้นสภาพข้าราชการ", control: "หักเงินเดือน ณ ที่จ่าย มีหุ้นค้ำประกัน 1,226 ลบ.", l: 1, i: 3, treatment: "รับความเสี่ยงเพื่อโอกาส", action: "1. ตรวจเงินได้คงเหลือสุทธิ >= 30% (ลดโอกาส)\n2. กระทบยอดเงินหักส่งรายเดือน (ตรวจจับ)\n3. บังคับใช้หลักประกันหุ้นเมื่อค้าง > 60 วัน (ลดผลกระทบ)", owner: "เจ้าหน้าที่สินเชื่อ / คณะกรรมการเงินกู้", budget: "ไม่ใช้งบประมาณ", evidence: "รายงานคำนวณเงินได้สุทธิ / ทะเบียนคุมการหักเงินเดือน" },
+            { id: 13, category: "ด้านสภาพคล่อง", title: "การถอนเงินฝากจำนวนมากอย่างกะทันหัน", cause: "สมาชิกขาดความเชื่อมั่น หรือจำเป็นต้องใช้เงินสดพร้อมกัน", control: "ดำรงสินทรัพย์สภาพคล่องตามเกณฑ์ มีวงเงิน O/D", l: 1, i: 3, treatment: "ยอมรับความเสี่ยง", action: "1. ประมาณการกระแสเงินสดรับจ่าย 30 วัน (ตรวจจับ)\n2. ดำรงสินทรัพย์สภาพคล่องตามกฎหมาย (ลดผลกระทบ)\n3. ยืนยันความพร้อมวงเงินกู้ O/D (ลดผลกระทบ)", owner: "เจ้าหน้าที่การเงิน / ผู้จัดการ", budget: "ไม่ใช้งบประมาณ", evidence: "ตารางประมาณการเงินสด / รายงานดำรงสภาพคล่อง" }
         ];
 
         const KRI_METRICS = [
@@ -563,11 +579,11 @@
         ];
 
         const IT_CHECKLIST = [
-            { cat: "IT 1: ทางกายภาพ", risk: "บุคคลภายนอกเข้าถึงห้อง Server / ไฟฟ้าดับกระทบระบบหลัก", check: "มีระบบสแกนลายนิ้วมือเข้าห้อง Server, เครื่องตรวจจับควัน, และเครื่องสำรองไฟ UPS ใช้งานได้ 100%", status: "ผ่านเกณฑ์" },
-            { cat: "IT 2: การเข้าถึงระบบ", risk: "เจ้าหน้าที่ใช้รหัสผ่านร่วมกัน / เข้าดูข้อมูลสมาชิกโดยไม่มีหน้าที่", check: "กำหนดสิทธิ์ Role-based, บังคับเปลี่ยน Password ทุก 90 วัน, ตรวจสอบ Access Log ทุกสัปดาห์", status: "ผ่านเกณฑ์" },
-            { cat: "IT 3: การประมวลผล", risk: "แก้ไขยอดเงินย้อนหลังโดยมิชอบ / สิ้นวันประมวลผลไม่สมบูรณ์", check: "ระบบบันทึก Audit Trail อัตโนมัติ ปรับปรุงยอดพิเศษต้องมีลายมือชื่อผู้จัดการอนุมัติ 2 ชั้น", status: "ผ่านเกณฑ์" },
-            { cat: "IT 4: สำรองข้อมูล", risk: "ฐานข้อมูลสูญหายจากมัลแวร์เรียกค่าไถ่ หรือฮาร์ดดิสก์เสียหาย", check: "สำรองข้อมูลแบบ 3-2-1 เก็บสำเนา Off-site นอกสถานที่ทุกวัน และทดสอบกู้คืนทุก 6 เดือน", status: "ผ่านเกณฑ์" },
-            { cat: "IT 5: ปรับปรุงระบบ", risk: "แก้ไขโปรแกรมบนฐานข้อมูลจริงโดยไม่ทดสอบ ทำให้ระบบล่ม", check: "ทดสอบบน Test Environment ก่อนขึ้น Production และมีเอกสาร Change Request ทุกครั้ง", status: "ผ่านเกณฑ์" }
+            { cat: "IT 1: ทางกายภาพ", risk: "บุคคลภายนอกเข้าถึงห้องแม่ข่าย / ไฟฟ้าดับกระทบระบบหลัก", check: "มีระบบสแกนลายนิ้วมือเข้าห้อง Server, เครื่องตรวจจับควัน, และเครื่องสำรองไฟ UPS ใช้งานได้ 100%", status: "ผ่านเกณฑ์" },
+            { cat: "IT 2: การเข้าถึงระบบ", risk: "เจ้าหน้าที่ใช้รหัสผ่านร่วมกัน / ผู้ไม่มีหน้าที่เข้าดูข้อมูลสมาชิก", check: "กำหนดสิทธิ์ Role-based, บังคับเปลี่ยน Password ทุก 90 วัน, ตรวจสอบ Access Log ทุกสัปดาห์", status: "ผ่านเกณฑ์" },
+            { cat: "IT 3: การประมวลผล", risk: "การแก้ไขยอดเงินย้อนหลังโดยมิชอบ / สิ้นวันประมวลผลไม่สมบูรณ์", check: "ระบบบันทึก Audit Trail อัตโนมัติ ปรับปรุงยอดพิเศษต้องมีลายมือชื่อผู้จัดการอนุมัติ 2 ชั้น", status: "ผ่านเกณฑ์" },
+            { cat: "IT 4: สำรองข้อมูล", risk: "ฐานข้อมูลสูญหายจากมัลแวร์เรียกค่าไถ่ หรืออุปกรณ์เสียหาย", check: "สำรองข้อมูลแบบ 3-2-1 เก็บสำเนา Off-site นอกสถานที่ทุกวัน และทดสอบกู้คืนทุก 6 เดือน", status: "ผ่านเกณฑ์" },
+            { cat: "IT 5: การปรับปรุงระบบ", risk: "แก้ไขโปรแกรมบนฐานข้อมูลจริงโดยไม่ทดสอบ ทำให้ระบบล่ม", check: "ทดสอบบน Test Environment ก่อนขึ้น Production และมีเอกสาร Change Request ทุกครั้ง", status: "ผ่านเกณฑ์" }
         ];
 
         const SURVEY_QUESTIONS = [
@@ -579,11 +595,13 @@
             "ความเสี่ยงด้านการกำกับดูแล: การดำเนินงานสอดคล้องกับระเบียบนายทะเบียนสหกรณ์ และกฎหมาย ปปง. ครบถ้วน"
         ];
 
+        // State variables
         let riskItems = JSON.parse(localStorage.getItem('coop_risks')) || DEFAULT_RISKS;
         let incidentLogs = JSON.parse(localStorage.getItem('coop_incidents')) || [
-            { date: "2026-08-15 14:30", level: "ระดับ 2: ปานกลาง", dept: "ฝ่ายเทคโนโลยีสารสนเทศ", desc: "ระบบเครือข่ายขัดข้องชั่วคราว 25 นาที", loss: "0", action: "สลับใช้คู่สายสำรอง และเปิดใช้ระบบบันทึกด้วยมือ" }
+            { date: "2026-08-15 14:30", level: "ระดับ 2: ปานกลาง", dept: "ฝ่ายเทคโนโลยีสารสนเทศ", desc: "ระบบเครือข่ายเชื่อมต่อขัดข้องชั่วคราวเป็นเวลา 25 นาที", loss: "0", action: "สลับใช้คู่สายสำรอง และเปิดใช้ระบบบันทึกด้วยมือ" }
         ];
 
+        // App Initialization
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             renderDashboard();
@@ -595,6 +613,7 @@
             renderIncidentTable();
         });
 
+        // Tab Switching Logic
         function switchTab(tabId) {
             const tabs = ['dashboard', 'register', 'treatment', 'kri', 'checklist', 'survey', 'incident', 'data-io'];
             tabs.forEach(t => {
@@ -603,36 +622,40 @@
                 if (el) el.classList.toggle('hidden', t !== tabId);
                 if (nav) {
                     if (t === tabId) {
-                        nav.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition bg-blue-600 text-white shadow-lg shadow-blue-600/20";
+                        nav.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition bg-blue-600 text-white";
                     } else {
-                        nav.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-slate-200 transition";
+                        nav.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg font-medium text-left transition text-slate-300 hover:bg-slate-800 hover:text-white";
                     }
                 }
             });
 
+            // Update page titles
             const titleMap = {
-                'dashboard': 'แดชบอร์ดภาพรวม & Risk Matrix',
+                'dashboard': 'แดชบอร์ดภาพรวมและการประเมินความเสี่ยง',
                 'register': 'ทะเบียนความเสี่ยงสหกรณ์ (Risk Register)',
-                'treatment': 'แผนจัดการความเสี่ยง (แบบที่ 2)',
-                'kri': 'ระบบเตือนภัยล่วงหน้า (Early Warning KRI)',
-                'checklist': 'แนวทางการควบคุมภายใน & IT 5 มาตรการ',
-                'survey': 'แบบสอบถามประเมินความเสี่ยงคณะกรรมการ (13 ท่าน)',
-                'incident': 'รายงานเหตุการณ์ความเสียหาย (Incident Management)',
+                'treatment': 'แผนจัดการความเสี่ยงและกิจกรรมควบคุม (แบบที่ 2)',
+                'kri': 'ระบบเตือนภัยล่วงหน้า (Early Warning KRI Dashboard)',
+                'checklist': 'แนวทางการควบคุมภายใน & ไอที 5 มาตรการ (สตส.)',
+                'survey': 'แบบสอบถามประเมินความเสี่ยงคณะกรรมการดำเนินการ (13 คน)',
+                'incident': 'ระบบรายงานเหตุการณ์ความเสียหาย (Incident Reporting)',
                 'data-io': 'นำเข้าและส่งออกฐานข้อมูลความเสี่ยง'
             };
             document.getElementById('page-title').innerText = titleMap[tabId] || 'ระบบบริหารความเสี่ยง';
             lucide.createIcons();
         }
 
+        // Calculation Helpers
         function getRiskLevel(l, i) {
             const score = l * i;
-            if (score >= 16) return { text: "สูงมาก", code: "VH", bg: "bg-rose-500/20 text-rose-400 border border-rose-500/30", cellBg: "bg-rose-950/40 text-rose-300 border-rose-800/50" };
-            if (score >= 10) return { text: "สูง", code: "H", bg: "bg-orange-500/20 text-orange-400 border border-orange-500/30", cellBg: "bg-orange-950/40 text-orange-300 border-orange-800/50" };
-            if (score >= 5)  return { text: "ปานกลาง", code: "M", bg: "bg-amber-500/20 text-amber-300 border border-amber-500/30", cellBg: "bg-amber-950/40 text-amber-300 border-amber-800/50" };
-            return { text: "ต่ำ", code: "L", bg: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30", cellBg: "bg-emerald-950/40 text-emerald-300 border-emerald-800/50" };
+            if (score >= 16) return { text: "สูงมาก", code: "VH", class: "badge-vh", boxClass: "risk-vh" };
+            if (score >= 10) return { text: "สูง", code: "H", class: "badge-h", boxClass: "risk-h" };
+            if (score >= 5)  return { text: "ปานกลาง", code: "M", class: "badge-m", boxClass: "risk-m" };
+            return { text: "ต่ำ", code: "L", class: "badge-l", boxClass: "risk-l" };
         }
 
+        // Render Dashboard & Risk Matrix
         function renderDashboard() {
+            // Update KPI Counts
             let vh = 0, h = 0, m = 0, l = 0;
             const categoryCounts = {};
 
@@ -642,27 +665,29 @@
                 else if (score >= 10) h++;
                 else if (score >= 5) m++;
                 else l++;
+
                 categoryCounts[r.category] = (categoryCounts[r.category] || 0) + 1;
             });
 
-            document.getElementById('kpi-total-risk').innerText = riskItems.length;
-            document.getElementById('kpi-vh-risk').innerText = vh;
-            document.getElementById('kpi-h-risk').innerText = h;
-            document.getElementById('kpi-ml-risk').innerText = (m + l);
+            document.getElementById('kpi-total-risk').innerText = `${riskItems.length} ปัจจัย`;
+            document.getElementById('kpi-vh-risk').innerText = `${vh} รายการ`;
+            document.getElementById('kpi-h-risk').innerText = `${h} รายการ`;
+            document.getElementById('kpi-ml-risk').innerText = `${m + l} รายการ`;
 
+            // Render 5x5 Heatmap Table
             const matrixBody = document.getElementById('risk-matrix-body');
             matrixBody.innerHTML = '';
 
             for (let i = 5; i >= 1; i--) {
-                let rowHtml = `<tr><td class="p-1.5 rounded-lg bg-slate-800/50 text-slate-400 font-bold text-left">${i}</td>`;
+                let rowHtml = `<tr><td class="p-2 font-bold bg-slate-100 border border-slate-200 text-slate-700 text-left">${i}</td>`;
                 for (let l_val = 1; l_val <= 5; l_val++) {
                     const level = getRiskLevel(l_val, i);
                     const matched = riskItems.filter(r => r.l == l_val && r.i == i);
-                    const badges = matched.map(r => `<span title="${r.title}" class="inline-block px-1.5 py-0.5 rounded bg-slate-900/90 text-[10px] font-bold border border-slate-700 shadow-sm mr-0.5 mb-0.5">#${r.id}</span>`).join('');
+                    const badges = matched.map(r => `<span title="${r.title}" class="inline-block px-1.5 py-0.5 rounded text-[10px] bg-white/80 font-bold shadow-xs mr-0.5 mb-0.5">#${r.id}</span>`).join('');
                     
                     rowHtml += `
-                        <td class="p-2 rounded-xl border heat-cell ${level.cellBg} cursor-pointer align-top h-14">
-                            <div class="font-bold text-[11px]">${l_val * i} <span class="text-[9px] font-normal opacity-80">(${level.code})</span></div>
+                        <td class="p-2 border border-slate-200 ${level.boxClass} transition hover:opacity-90 cursor-pointer text-center align-top h-14">
+                            <div class="font-bold text-[11px]">${l_val * i} <span class="text-[9px] font-normal">(${level.code})</span></div>
                             <div class="mt-1 flex flex-wrap justify-center">${badges}</div>
                         </td>
                     `;
@@ -671,6 +696,7 @@
                 matrixBody.innerHTML += rowHtml;
             }
 
+            // Render Chart
             renderCategoryChart(categoryCounts);
         }
 
@@ -679,58 +705,75 @@
             const ctx = document.getElementById('chartCategory').getContext('2d');
             if (categoryChartInstance) categoryChartInstance.destroy();
 
+            const labels = Object.keys(dataObj);
+            const data = Object.values(dataObj);
+
             categoryChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(dataObj),
+                    labels: labels,
                     datasets: [{
-                        data: Object.values(dataObj),
+                        data: data,
                         backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
-                        borderWidth: 0
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Sarabun', size: 10 } } }
+                        legend: { position: 'bottom', labels: { font: { family: 'Sarabun', size: 10 } } }
                     }
                 }
             });
         }
 
+        // Render Risk Register Table
         function renderRiskTable() {
             const tbody = document.getElementById('risk-table-body');
             const search = document.getElementById('search-risk').value.toLowerCase();
             const catFilter = document.getElementById('filter-category').value;
+            const lvlFilter = document.getElementById('filter-level').value;
+
             tbody.innerHTML = '';
 
             const filtered = riskItems.filter(r => {
+                const level = getRiskLevel(r.l, r.i);
                 const matchSearch = r.title.toLowerCase().includes(search) || r.cause.toLowerCase().includes(search) || r.category.toLowerCase().includes(search);
                 const matchCat = catFilter === '' || r.category === catFilter;
-                return matchSearch && matchCat;
+                const matchLvl = lvlFilter === '' || level.text === lvlFilter;
+                return matchSearch && matchCat && matchLvl;
             });
 
-            filtered.forEach(r => {
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center p-6 text-slate-400">ไม่พบรายการความเสี่ยงที่ค้นหา</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((r, idx) => {
                 const score = r.l * r.i;
                 const level = getRiskLevel(r.l, r.i);
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="p-3 text-center text-slate-500 font-mono">${r.id}</td>
-                        <td class="p-3 font-semibold text-slate-300">${r.category}</td>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 text-center font-medium text-slate-500">${r.id}</td>
+                        <td class="p-3 font-semibold text-slate-700">${r.category}</td>
                         <td class="p-3">
-                            <div class="font-bold text-white">${r.title}</div>
-                            <div class="text-slate-400 text-[11px] mt-0.5"><span class="text-slate-500">สาเหตุ:</span> ${r.cause}</div>
+                            <div class="font-bold text-slate-800">${r.title}</div>
+                            <div class="text-slate-500 text-[11px] mt-0.5"><span class="font-semibold text-slate-600">สาเหตุ:</span> ${r.cause}</div>
                         </td>
-                        <td class="p-3 text-slate-400 text-[11px]">${r.control}</td>
-                        <td class="p-3 text-center font-bold text-slate-300">${r.l}</td>
-                        <td class="p-3 text-center font-bold text-slate-300">${r.i}</td>
-                        <td class="p-3 text-center font-bold text-white">${score}</td>
+                        <td class="p-3 text-slate-600 text-[11px]">${r.control}</td>
+                        <td class="p-3 text-center font-bold text-slate-700">${r.l}</td>
+                        <td class="p-3 text-center font-bold text-slate-700">${r.i}</td>
+                        <td class="p-3 text-center font-bold text-slate-800">${score}</td>
                         <td class="p-3 text-center">
-                            <span class="inline-block px-2 py-0.5 rounded-md text-[10px] font-semibold ${level.bg}">${level.text} (${level.code})</span>
+                            <span class="inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold ${level.class}">${level.text} (${level.code})</span>
                         </td>
                         <td class="p-3 text-center">
-                            <button onclick="deleteRiskItem(${r.id})" class="p-1 text-rose-400 hover:text-rose-300 transition" title="ลบ"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <div class="flex items-center justify-center gap-1.5">
+                                <button onclick="editRiskItem(${r.id})" class="p-1 text-blue-600 hover:bg-blue-50 rounded" title="แก้ไข"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                <button onclick="deleteRiskItem(${r.id})" class="p-1 text-rose-600 hover:bg-rose-50 rounded" title="ลบ"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -738,6 +781,7 @@
             lucide.createIcons();
         }
 
+        // Render Treatment Plan Table
         function renderTreatmentTable() {
             const tbody = document.getElementById('treatment-table-body');
             tbody.innerHTML = '';
@@ -748,54 +792,55 @@
                 const formattedAction = (r.action || '-').replace(/\n/g, '<br>');
 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition">
+                    <tr class="hover:bg-slate-50 transition">
                         <td class="p-3">
-                            <div class="font-bold text-white">#${r.id} ${r.title}</div>
-                            <div class="mt-1"><span class="px-2 py-0.5 rounded text-[10px] font-semibold ${level.bg}">${level.text} (${score})</span></div>
+                            <div class="font-bold text-slate-800">#${r.id} ${r.title}</div>
+                            <div class="mt-1"><span class="px-2 py-0.5 rounded text-[10px] font-semibold ${level.class}">${level.text} (คะแนน ${score})</span></div>
                         </td>
-                        <td class="p-3 font-semibold text-blue-400">${r.treatment || 'ลดความเสี่ยง'}</td>
-                        <td class="p-3 text-slate-300 text-[11px] leading-relaxed">${formattedAction}</td>
-                        <td class="p-3 text-slate-400 text-[11px]">${r.owner || '-'}</td>
-                        <td class="p-3 text-slate-400 text-[11px]">${r.budget || 'ไม่ใช้งบประมาณ'}</td>
-                        <td class="p-3 text-slate-400 text-[11px] leading-relaxed">${r.evidence || '-'}</td>
+                        <td class="p-3 font-semibold text-blue-700">${r.treatment || 'ลดความเสี่ยง'}</td>
+                        <td class="p-3 text-slate-700 text-[11px] leading-relaxed">${formattedAction}</td>
+                        <td class="p-3 font-medium text-slate-700 text-[11px]">${r.owner || '-'}</td>
+                        <td class="p-3 text-slate-600 text-[11px]">${r.budget || 'ไม่ใช้งบประมาณ'}</td>
+                        <td class="p-3 text-slate-500 text-[11px] leading-relaxed">${r.evidence || '-'}</td>
                     </tr>
                 `;
             });
         }
 
+        // Render KRI Dashboard
         function renderKRIDashboard() {
             const container = document.getElementById('kri-cards-container');
             container.innerHTML = '';
 
             KRI_METRICS.forEach(k => {
-                let badgeClass = "bg-emerald-500 shadow-emerald-500/50";
+                let badgeClass = "bg-emerald-500";
+                let textClass = "text-emerald-700 bg-emerald-50 border-emerald-200";
                 let statusText = "ปกติ";
-                let textClass = "text-emerald-400 bg-emerald-950/40 border-emerald-800/50";
 
                 if (k.status === 'yellow') {
-                    badgeClass = "bg-amber-500 shadow-amber-500/50";
+                    badgeClass = "bg-amber-500";
+                    textClass = "text-amber-700 bg-amber-50 border-amber-200";
                     statusText = "เฝ้าระวัง";
-                    textClass = "text-amber-300 bg-amber-950/40 border-amber-800/50";
                 } else if (k.status === 'red') {
-                    badgeClass = "bg-rose-500 shadow-rose-500/50";
+                    badgeClass = "bg-rose-500";
+                    textClass = "text-rose-700 bg-rose-50 border-rose-200";
                     statusText = "วิกฤต";
-                    textClass = "text-rose-400 bg-rose-950/40 border-rose-800/50";
                 }
 
                 container.innerHTML += `
-                    <div class="glass-card p-5 rounded-2xl flex flex-col justify-between space-y-4">
+                    <div class="p-5 rounded-xl border border-slate-200 bg-white shadow-sm flex flex-col justify-between space-y-4">
                         <div>
                             <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">${k.cat}</span>
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${textClass}">
-                                    <span class="w-1.5 h-1.5 rounded-full ${badgeClass} shadow-xs"></span> ${statusText}
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600">${k.cat}</span>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${textClass}">
+                                    <span class="w-2 h-2 rounded-full ${badgeClass}"></span> ${statusText}
                                 </span>
                             </div>
-                            <h4 class="font-bold text-xs text-slate-200">${k.name}</h4>
-                            <div class="text-xl font-black text-white mt-2">${k.val}</div>
+                            <h4 class="font-bold text-sm text-slate-800">${k.name}</h4>
+                            <div class="text-xl font-extrabold text-slate-900 mt-2">${k.val}</div>
                         </div>
-                        <div class="text-[11px] text-slate-400 pt-3 border-t border-slate-800/80 flex items-center gap-1.5">
-                            <i data-lucide="info" class="w-3.5 h-3.5 text-slate-500 shrink-0"></i>
+                        <div class="text-[11px] text-slate-500 pt-3 border-t border-slate-100 flex items-center gap-1.5">
+                            <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
                             <span>${k.note}</span>
                         </div>
                     </div>
@@ -804,17 +849,19 @@
             lucide.createIcons();
         }
 
+        // Render Internal Control Checklist
         function renderChecklistTable() {
             const tbody = document.getElementById('checklist-table-body');
             tbody.innerHTML = '';
+
             IT_CHECKLIST.forEach(c => {
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="p-3.5 font-bold text-white">${c.cat}</td>
-                        <td class="p-3.5 text-slate-400 text-[11px]">${c.risk}</td>
-                        <td class="p-3.5 text-slate-300 text-[11px] font-medium">${c.check}</td>
-                        <td class="p-3.5 text-center">
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-bold text-slate-800">${c.cat}</td>
+                        <td class="p-3 text-slate-600 text-[11px]">${c.risk}</td>
+                        <td class="p-3 text-slate-700 font-medium text-[11px]">${c.check}</td>
+                        <td class="p-3 text-center">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 <i data-lucide="check" class="w-3 h-3"></i> ${c.status}
                             </span>
                         </td>
@@ -824,19 +871,21 @@
             lucide.createIcons();
         }
 
+        // Render Survey Questions
         function renderSurveyForm() {
             const container = document.getElementById('survey-questions-container');
             container.innerHTML = '';
+
             SURVEY_QUESTIONS.forEach((q, idx) => {
                 container.innerHTML += `
-                    <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
-                        <div class="font-medium text-xs text-slate-200">ข้อที่ ${idx + 1}: ${q}</div>
-                        <div class="flex items-center gap-6 text-xs text-slate-400">
-                            <label class="flex items-center gap-1.5 cursor-pointer hover:text-white"><input type="radio" name="sq_${idx}" value="5" class="text-blue-600"> 5 (สูงมาก)</label>
-                            <label class="flex items-center gap-1.5 cursor-pointer hover:text-white"><input type="radio" name="sq_${idx}" value="4" class="text-blue-600"> 4 (สูง)</label>
-                            <label class="flex items-center gap-1.5 cursor-pointer hover:text-white"><input type="radio" name="sq_${idx}" value="3" checked class="text-blue-600"> 3 (ปานกลาง)</label>
-                            <label class="flex items-center gap-1.5 cursor-pointer hover:text-white"><input type="radio" name="sq_${idx}" value="2" class="text-blue-600"> 2 (น้อย)</label>
-                            <label class="flex items-center gap-1.5 cursor-pointer hover:text-white"><input type="radio" name="sq_${idx}" value="1" class="text-blue-600"> 1 (น้อยมาก)</label>
+                    <div class="p-4 border border-slate-200 rounded-lg bg-white space-y-3">
+                        <div class="font-semibold text-xs text-slate-800 leading-snug">ข้อที่ ${idx + 1}: ${q}</div>
+                        <div class="flex items-center gap-6 text-xs text-slate-600">
+                            <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="q_${idx}" value="5" class="text-blue-600"> 5 (สูงมาก)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="q_${idx}" value="4" class="text-blue-600"> 4 (สูง)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="q_${idx}" value="3" checked class="text-blue-600"> 3 (ปานกลาง)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="q_${idx}" value="2" class="text-blue-600"> 2 (น้อย)</label>
+                            <label class="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="q_${idx}" value="1" class="text-blue-600"> 1 (น้อยมาก)</label>
                         </div>
                     </div>
                 `;
@@ -844,21 +893,29 @@
         }
 
         function submitSurvey() {
-            alert('บันทึกผลการประเมินความเสี่ยงด้านการเงินของคณะกรรมการเรียบร้อยแล้ว');
+            const name = document.getElementById('survey-evaluator').value.trim() || 'กรรมการท่านที่ 1';
+            alert(`บันทึกผลการประเมินความเสี่ยงด้านการเงินของ [${name}] เรียบร้อยแล้ว ระบบจะนำคะแนนไปประมวลผลในภาพรวม`);
         }
 
+        // Incident Management Logic
         function renderIncidentTable() {
             const tbody = document.getElementById('incident-table-body');
             tbody.innerHTML = '';
+
+            if (incidentLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-slate-400">ยังไม่มีประวัติการรายงานความเสียหาย</td></tr>`;
+                return;
+            }
+
             incidentLogs.forEach(inc => {
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="p-3 text-slate-400 font-mono text-[11px]">${inc.date}</td>
-                        <td class="p-3 font-bold text-rose-400 text-[11px]">${inc.level}</td>
-                        <td class="p-3 text-slate-300 text-[11px]">${inc.dept}</td>
-                        <td class="p-3 text-slate-300 text-[11px]">${inc.desc}</td>
-                        <td class="p-3 font-bold text-white text-[11px]">${Number(inc.loss).toLocaleString()}</td>
-                        <td class="p-3 text-slate-400 text-[11px]">${inc.action}</td>
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-2.5 font-medium text-slate-700">${inc.date}</td>
+                        <td class="p-2.5 font-bold text-rose-600">${inc.level}</td>
+                        <td class="p-2.5 text-slate-600">${inc.dept}</td>
+                        <td class="p-2.5 text-slate-700">${inc.desc}</td>
+                        <td class="p-2.5 font-bold text-slate-800">${Number(inc.loss).toLocaleString()}</td>
+                        <td class="p-2.5 text-slate-600">${inc.action}</td>
                     </tr>
                 `;
             });
@@ -869,30 +926,61 @@
             const dept = document.getElementById('inc-dept').value.trim() || 'ฝ่ายปฏิบัติการ';
             const desc = document.getElementById('inc-desc').value.trim();
             const loss = document.getElementById('inc-loss').value || 0;
-            const action = document.getElementById('inc-action').value.trim() || 'ดำเนินการตามแผน BCP';
+            const action = document.getElementById('inc-action').value.trim() || 'ดำเนินการตามคู่มือ BCP';
 
-            if (!desc) { alert('โปรดระบุรายละเอียดของเหตุการณ์'); return; }
+            if (!desc) {
+                alert('โปรดระบุรายละเอียดของเหตุการณ์ความเสียหาย');
+                return;
+            }
 
             const now = new Date();
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
             incidentLogs.unshift({ date: dateStr, level, dept, desc, loss, action });
             localStorage.setItem('coop_incidents', JSON.stringify(incidentLogs));
             renderIncidentTable();
 
+            // Clear inputs
             document.getElementById('inc-desc').value = '';
             document.getElementById('inc-loss').value = '';
             document.getElementById('inc-action').value = '';
             alert('บันทึกรายงานเหตุการณ์ความเสียหายเรียบร้อยแล้ว');
         }
 
+        // Modal Controls & Risk Item CRUD
         function openModal(id) {
+            document.getElementById('risk-edit-id').value = '';
+            document.getElementById('form-risk-title').value = '';
+            document.getElementById('form-risk-cause').value = '';
+            document.getElementById('form-risk-control').value = '';
+            document.getElementById('form-risk-l').value = '1';
+            document.getElementById('form-risk-i').value = '1';
+            document.getElementById('modal-risk-title').innerText = 'เพิ่มรายการประเมินความเสี่ยง';
             document.getElementById(id).classList.remove('hidden');
         }
+
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
         }
 
+        function editRiskItem(id) {
+            const item = riskItems.find(r => r.id === id);
+            if (!item) return;
+
+            document.getElementById('risk-edit-id').value = item.id;
+            document.getElementById('form-risk-cat').value = item.category;
+            document.getElementById('form-risk-title').value = item.title;
+            document.getElementById('form-risk-cause').value = item.cause;
+            document.getElementById('form-risk-control').value = item.control;
+            document.getElementById('form-risk-l').value = item.l;
+            document.getElementById('form-risk-i').value = item.i;
+            document.getElementById('modal-risk-title').innerText = `แก้ไขรายการความเสี่ยง #${item.id}`;
+
+            document.getElementById('modal-add-risk').classList.remove('hidden');
+        }
+
         function saveRiskItem() {
+            const editId = document.getElementById('risk-edit-id').value;
             const category = document.getElementById('form-risk-cat').value;
             const title = document.getElementById('form-risk-title').value.trim();
             const cause = document.getElementById('form-risk-cause').value.trim();
@@ -900,28 +988,38 @@
             const l = parseInt(document.getElementById('form-risk-l').value);
             const i = parseInt(document.getElementById('form-risk-i').value);
 
-            if (!title) { alert('โปรดระบุชื่อเหตุการณ์ความเสี่ยง'); return; }
+            if (!title) {
+                alert('โปรดระบุชื่อเหตุการณ์ความเสี่ยง');
+                return;
+            }
 
-            const newId = riskItems.length > 0 ? Math.max(...riskItems.map(r => r.id)) + 1 : 1;
-            riskItems.push({
-                id: newId, category, title, cause, control, l, i,
-                treatment: "ลดความเสี่ยง",
-                action: "1. ทบทวนกระบวนการและกำหนดจุดควบคุมคู่ขนาน",
-                owner: "ฝ่ายจัดการ / Risk Owner",
-                budget: "ไม่ใช้งบประมาณ",
-                evidence: "รายงานผลการปฏิบัติงาน"
-            });
+            if (editId) {
+                const index = riskItems.findIndex(r => r.id === parseInt(editId));
+                if (index !== -1) {
+                    riskItems[index] = { ...riskItems[index], category, title, cause, control, l, i };
+                }
+            } else {
+                const newId = riskItems.length > 0 ? Math.max(...riskItems.map(r => r.id)) + 1 : 1;
+                riskItems.push({
+                    id: newId, category, title, cause, control, l, i,
+                    treatment: "ลดความเสี่ยง",
+                    action: "1. ทบทวนกระบวนการทำงานและแบ่งแยกหน้าที่\n2. กำหนดจุดสอบทานคู่ขนาน",
+                    owner: "ผู้จัดการ / Risk Owner",
+                    budget: "ไม่ใช้งบประมาณ",
+                    evidence: "บันทึกรายงานการปฏิบัติงาน"
+                });
+            }
 
             localStorage.setItem('coop_risks', JSON.stringify(riskItems));
             closeModal('modal-add-risk');
             renderDashboard();
             renderRiskTable();
             renderTreatmentTable();
-            alert('เพิ่มรายการความเสี่ยงสำเร็จ');
+            alert('บันทึกข้อมูลเรียบร้อยแล้ว');
         }
 
         function deleteRiskItem(id) {
-            if (!confirm(`ยืนยันการลบรายการความเสี่ยง #${id}?`)) return;
+            if (!confirm(`คุณต้องการลบรายการความเสี่ยง #${id} ใช่หรือไม่?`)) return;
             riskItems = riskItems.filter(r => r.id !== id);
             localStorage.setItem('coop_risks', JSON.stringify(riskItems));
             renderDashboard();
@@ -929,26 +1027,61 @@
             renderTreatmentTable();
         }
 
+        // Export / Import Tools
         function exportRiskToExcel() {
-            const data = riskItems.map(r => ({
-                "ลำดับ": r.id,
-                "ด้านความเสี่ยง": r.category,
-                "เหตุการณ์ความเสี่ยง": r.title,
-                "สาเหตุ": r.cause,
-                "การควบคุมที่มีอยู่": r.control,
-                "โอกาส (L)": r.l,
-                "ผลกระทบ (I)": r.i,
-                "คะแนน": r.l * r.i,
-                "ระดับ": getRiskLevel(r.l, r.i).text
-            }));
-            const ws = XLSX.utils.json_to_sheet(data);
+            const dataToExport = riskItems.map(r => {
+                const score = r.l * r.i;
+                const level = getRiskLevel(r.l, r.i);
+                return {
+                    "ลำดับ": r.id,
+                    "ด้านความเสี่ยง": r.category,
+                    "เหตุการณ์ความเสี่ยง": r.title,
+                    "สาเหตุ": r.cause,
+                    "การควบคุมที่มีอยู่": r.control,
+                    "โอกาส (L)": r.l,
+                    "ผลกระทบ (I)": r.i,
+                    "คะแนนรวม": score,
+                    "ระดับความเสี่ยง": `${level.text} (${level.code})`
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Risk_Register");
             XLSX.writeFile(wb, "Risk_Register_สอ_สตง_2569.xlsx");
         }
 
+        function exportTreatmentToExcel() {
+            const dataToExport = riskItems.map(r => {
+                const score = r.l * r.i;
+                const level = getRiskLevel(r.l, r.i);
+                return {
+                    "ลำดับ": r.id,
+                    "ด้านความเสี่ยง": r.category,
+                    "เหตุการณ์ความเสี่ยง": r.title,
+                    "ระดับความเสี่ยง": `${level.text} (${score})`,
+                    "แนวทางตอบสนอง": r.treatment || "ลดความเสี่ยง",
+                    "กิจกรรมควบคุม": r.action || "-",
+                    "ผู้รับผิดชอบ": r.owner || "-",
+                    "งบประมาณ": r.budget || "ไม่ใช้งบประมาณ",
+                    "หลักฐานที่จัดเก็บ": r.evidence || "-"
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Treatment_Plan");
+            XLSX.writeFile(wb, "Risk_Treatment_Plan_แบบที่2_สอ_สตง.xlsx");
+        }
+
         function exportFullJSON() {
-            const exportData = { app: "COOP_RISK_SYSTEM", timestamp: new Date().toISOString(), risks: riskItems, incidents: incidentLogs };
+            const exportData = {
+                app: "COOP_RISK_MANAGEMENT_SYSTEM",
+                version: "2026.1",
+                timestamp: new Date().toISOString(),
+                risks: riskItems,
+                incidents: incidentLogs
+            };
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -960,12 +1093,16 @@
 
         function importJSONFile() {
             const fileInput = document.getElementById('import-json-file');
-            if (!fileInput.files.length) { alert('โปรดเลือกไฟล์ JSON'); return; }
+            if (!fileInput.files.length) {
+                alert('โปรดเลือกไฟล์ JSON สำรอง');
+                return;
+            }
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (data.risks) {
+                    if (data.risks && Array.isArray(data.risks)) {
                         riskItems = data.risks;
                         localStorage.setItem('coop_risks', JSON.stringify(riskItems));
                         if (data.incidents) {
@@ -976,10 +1113,14 @@
                         renderRiskTable();
                         renderTreatmentTable();
                         renderIncidentTable();
-                        alert('นำเข้าข้อมูลสำเร็จ');
+                        alert('นำเข้าข้อมูลสำเร็จเรียบร้อยแล้ว');
                         switchTab('dashboard');
+                    } else {
+                        alert('โครงสร้างไฟล์ JSON ไม่ถูกต้อง');
                     }
-                } catch (err) { alert('ไฟล์ไม่ถูกต้อง'); }
+                } catch (err) {
+                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์ JSON');
+                }
             };
             reader.readAsText(fileInput.files[0]);
         }
